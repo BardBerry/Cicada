@@ -22,6 +22,14 @@ export default defineConfig(
     rules: {
       'prefer-const': 'error',
       'vue/multi-word-component-names': 'off',
+      'vue/no-undef-components': 'error',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          prefer: 'type-imports',
+          fixStyle: 'inline-type-imports',
+        },
+      ],
     },
 
     languageOptions: {
