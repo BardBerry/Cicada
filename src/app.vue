@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import TypingSession from './lib/studio/typing-session.vue';
+import Studio from './lib/studio/studio.vue';
 </script>
 
 <template>
   <main class="container">
-    <TypingSession />
+    <Studio />
   </main>
 </template>
 
-<style></style>
+<style scoped>
+.container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+</style>
