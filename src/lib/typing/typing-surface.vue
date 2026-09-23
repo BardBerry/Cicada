@@ -21,8 +21,13 @@ function focus() {
   textarea.value?.focus();
 }
 
+function blur() {
+  textarea.value?.blur();
+}
+
 defineExpose({
   focus,
+  blur,
 });
 
 function handleInput(event: Event) {
@@ -43,7 +48,7 @@ function handleInput(event: Event) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key !== 'Enter') return;
+  if (event.isComposing || event.key !== 'Enter') return;
 
   event.preventDefault();
 
@@ -58,12 +63,37 @@ function handleKeydown(event: KeyboardEvent) {
 <template>
   <textarea
     ref="textarea"
-    :value="text"
+    class="typing-surface"
+    :value="props.text"
     autocorrect="off"
     autocapitalize="off"
     spellcheck="false"
-    :disabled="disabled"
+    :disabled="props.disabled"
     @input="handleInput"
     @keydown="handleKeydown"
   ></textarea>
 </template>
+
+<style scoped>
+.typing-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  outline: 0;
+  resize: none;
+
+  opacity: 0;
+  cursor: default;
+}
+
+.typing-surface:disabled {
+  pointer-events: none;
+}
+</style>
