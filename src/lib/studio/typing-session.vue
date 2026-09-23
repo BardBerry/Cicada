@@ -1,48 +1,53 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { useTemplateRef } from 'vue';
 import TypingSurface from '../typing/typing-surface.vue';
-import {
-  ETypingEventType,
-  type TTypingEvent,
-} from '../typing/typing-event.model';
-import { applyTextMutation } from '../typing/apply-text-mutation';
-import { useTypingRecording } from '../recording/use-typing-recording';
+import { useTypingSession } from './use-typing-session';
 
-const text = ref('');
-const captions = ref<string[]>([]);
+const typingSurface = useTemplateRef('typingSurface');
 
-const { isRecording, startRecording, stopRecording, recordEvent } =
-  useTypingRecording();
+const {
+  session,
+  lastRecording,
+  isRecording,
+  isReplaying,
+  startRecording,
+  stopRecording,
+  startReplay,
+  stopReplay,
+  handleLiveTypingEvent,
+} = useTypingSession();
 
 function handleStartRecording() {
-  captions.value = [];
-  text.value = '';
   startRecording();
-}
-
-function handleTypingEvent(event: TTypingEvent) {
-  switch (event.type) {
-    case ETypingEventType.Commit:
-      captions.value.push(text.value);
-      text.value = '';
-      break;
-    case ETypingEventType.Insert:
-    case ETypingEventType.Delete:
-      text.value = applyTextMutation({ text: text.value, event });
-  }
-
-  if (isRecording.value) {
-    recordEvent(event);
-  }
+  typingSurface.value?.focus();
 }
 </script>
 
 <template>
-  <TypingSurface :text="text" @typing-event="handleTypingEvent" />
-  <button v-if="!isRecording" @click="handleStartRecording">Record</button>
-  <button v-else @click="stopRecording">Stop</button>
+  <TypingSurface
+    ref="typingSurface"
+    :text="session.text"
+    :disabled="isReplaying"
+    @typing-event="handleLiveTypingEvent"
+  />
+  <button :disabled="isRecording || isReplaying" @click="handleStartRecording">
+    Record
+  </button>
+  <button :disabled="!isRecording" @click="stopRecording">Stop</button>
+  <button
+    v-if="!isReplaying"
+    :disabled="!lastRecording || isRecording"
+    @click="startReplay"
+  >
+    Replay
+  </button>
+  <button v-else @click="stopReplay">Stop Replay</button>
   <div>
-    <div v-for="(caption, index) in captions" :key="index" class="caption">
+    <div
+      v-for="(caption, index) in session.captions"
+      :key="index"
+      class="caption"
+    >
       {{ caption }}
     </div>
   </div>

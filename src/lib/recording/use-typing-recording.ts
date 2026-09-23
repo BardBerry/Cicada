@@ -1,16 +1,15 @@
 import { ref } from 'vue';
-import {
-  createTypingRecorder,
-  type TPerformanceRecorder,
-} from './typing-recorder';
+import { createTypingRecorder, type TTypingRecorder } from './typing-recorder';
 import { type TTypingEvent } from '../typing/typing-event.model';
 
 export function useTypingRecording() {
   const isRecording = ref(false);
 
-  let recorder: TPerformanceRecorder | null = null;
+  let recorder: TTypingRecorder | null = null;
 
   function startRecording() {
+    if (recorder) return;
+
     recorder = createTypingRecorder();
     isRecording.value = true;
   }
