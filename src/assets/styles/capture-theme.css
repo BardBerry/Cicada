@@ -1,0 +1,5 @@
+:root {
+  --capture-chroma-color: #00ff00;
+  --capture-padding: 24px;
+  --capture-aspect-ratio: 16 / 9;
+}

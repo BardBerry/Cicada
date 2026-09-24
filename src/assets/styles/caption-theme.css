@@ -1,0 +1,22 @@
+:root {
+  --caption-font-family: Georgia, 'Times New Roman', serif;
+  --caption-font-size: clamp(20px, 2.4vw, 28px);
+  --caption-font-weight: 400;
+  --caption-line-height: 1.45;
+  --caption-text-color: #262c23;
+  --caption-background: #f9f6ed;
+  --caption-active-background: #e6edc7;
+  --caption-border-color: #dfdfd2;
+  --caption-active-border-color: #bbc897;
+  --caption-border-width: 1px;
+  --caption-max-width: 36ch;
+  --caption-padding: 16px 22px;
+  --caption-radius: 19px;
+  --caption-gap: 12px;
+  --caption-caret-spacing: 4px;
+  --caption-caret-offset: 2px;
+  --caption-caret-bottom: -0.2em;
+  --caption-caret-width: 2px;
+  --caption-caret-height: 1em;
+  --caption-caret-color: #536732;
+}

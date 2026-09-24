@@ -20,19 +20,23 @@ const props = defineProps<TProps>();
 <style scoped>
 .caption {
   display: inline-block;
-  max-width: 300px;
-  padding: 8px 12px;
+  max-width: min(100%, var(--caption-max-width));
+  padding: var(--caption-padding);
 
-  background: #222;
-  color: white;
+  background: var(--caption-background);
+  color: var(--caption-text-color);
 
-  border-radius: 8px;
-  font-size: 24px;
-  line-height: 1.2;
+  border: var(--caption-border-width) solid var(--caption-border-color);
+  border-radius: var(--caption-radius);
+  font-family: var(--caption-font-family);
+  font-size: var(--caption-font-size);
+  font-weight: var(--caption-font-weight);
+  line-height: var(--caption-line-height);
 }
 
 .caption--active {
-  background: #333;
+  border-color: var(--caption-active-border-color);
+  background: var(--caption-active-background);
 }
 
 .caption__text {
@@ -44,7 +48,7 @@ const props = defineProps<TProps>();
   position: relative;
   display: inline-block;
 
-  width: 4px;
+  width: var(--caption-caret-spacing);
   height: 0;
 }
 
@@ -52,13 +56,13 @@ const props = defineProps<TProps>();
   content: '';
 
   position: absolute;
-  left: 2px;
-  bottom: -0.2em;
+  left: var(--caption-caret-offset);
+  bottom: var(--caption-caret-bottom);
 
-  width: 2px;
-  height: 1em;
+  width: var(--caption-caret-width);
+  height: var(--caption-caret-height);
 
-  background: currentColor;
+  background: var(--caption-caret-color);
 }
 
 .caption__caret--hidden::after {

@@ -1,0 +1,112 @@
+:root {
+  --app-font-family:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --app-font-size: 14px;
+  --app-line-height: 1.5;
+  --app-title-font-family: Georgia, 'Times New Roman', serif;
+  --app-status-live: #527044;
+  --app-status-recording: #a54832;
+  --app-status-replaying: #526f91;
+  --app-recording-background: #f4e5df;
+  --app-recording-hover: #eed7ce;
+  --app-recording-pressed: #e8cbbf;
+  --app-recording-border: #c99482;
+  --app-recording-text: #903c29;
+  --app-radius-control: 7px;
+  --app-radius-panel: 12px;
+  --app-preview-shadow: 0 4px 20px rgb(44 48 34 / 3%);
+  --app-workspace-padding: clamp(16px, 3vw, 32px);
+}
+
+:root,
+.app-theme--sage-olive {
+  --app-background: #f1f0e9;
+  --app-surface: #f9f8f1;
+  --app-preview-background: #e9ecdf;
+  --app-text-primary: #30372c;
+  --app-text-secondary: #656e5c;
+  --app-border: #cdd3c0;
+  --app-focus-color: #677943;
+  --app-focus-ring: 0 0 0 3px rgb(103 121 67 / 13%);
+  --app-control-background: transparent;
+  --app-control-hover: #e5e8db;
+  --app-control-pressed: #dadecc;
+  --app-control-disabled-background: #eeefe6;
+  --app-control-disabled-text: #969c8c;
+  --app-control-disabled-border: #dbded1;
+  --app-primary-background: #35462a;
+  --app-primary-hover: #465b37;
+  --app-primary-pressed: #293820;
+  --app-primary-text: #f4f5e9;
+}
+
+.app-theme--warm-moss {
+  --app-background: #f3eee4;
+  --app-surface: #fbf7ee;
+  --app-preview-background: #e9e3d5;
+  --app-text-primary: #3e4032;
+  --app-text-secondary: #726e5d;
+  --app-border: #d5ccb9;
+  --app-focus-color: #777747;
+  --app-focus-ring: 0 0 0 3px rgb(119 119 71 / 13%);
+  --app-control-background: transparent;
+  --app-control-hover: #e7e1d2;
+  --app-control-pressed: #dbd3c0;
+  --app-control-disabled-background: #efeadd;
+  --app-control-disabled-text: #a19b8b;
+  --app-control-disabled-border: #dfd7c7;
+  --app-primary-background: #505638;
+  --app-primary-hover: #656b47;
+  --app-primary-pressed: #3d432a;
+  --app-primary-text: #faf5e8;
+}
+
+.app-theme--dusty-slate {
+  --app-background: #edf0ef;
+  --app-surface: #f6f8f6;
+  --app-preview-background: #e0e7e8;
+  --app-text-primary: #354247;
+  --app-text-secondary: #606f77;
+  --app-border: #c7d2d5;
+  --app-focus-color: #62818d;
+  --app-focus-ring: 0 0 0 3px rgb(98 129 141 / 13%);
+  --app-control-background: transparent;
+  --app-control-hover: #dde5e6;
+  --app-control-pressed: #cfdadd;
+  --app-control-disabled-background: #e8edec;
+  --app-control-disabled-text: #97a3a6;
+  --app-control-disabled-border: #d4dedd;
+  --app-primary-background: #405e6b;
+  --app-primary-hover: #527482;
+  --app-primary-pressed: #314b56;
+  --app-primary-text: #f5f7f3;
+}
+
+.app-theme--rose-stone {
+  --app-background: #f3edeb;
+  --app-surface: #fbf6f3;
+  --app-preview-background: #eae0dd;
+  --app-text-primary: #493c3e;
+  --app-text-secondary: #7c696c;
+  --app-border: #d9c9c6;
+  --app-focus-color: #9a747c;
+  --app-focus-ring: 0 0 0 3px rgb(154 116 124 / 13%);
+  --app-control-background: transparent;
+  --app-control-hover: #e9ddda;
+  --app-control-pressed: #dfceca;
+  --app-control-disabled-background: #f0e7e4;
+  --app-control-disabled-text: #aa9799;
+  --app-control-disabled-border: #e3d5d1;
+  --app-primary-background: #75545e;
+  --app-primary-hover: #8a6771;
+  --app-primary-pressed: #60424b;
+  --app-primary-text: #fff5ef;
+}
+
+body {
+  background: var(--app-background);
+  color: var(--app-text-primary);
+  font-family: var(--app-font-family);
+  font-size: var(--app-font-size);
+  line-height: var(--app-line-height);
+}

@@ -30,17 +30,16 @@ const visibleCommittedCaptions = computed(() =>
 
 <style scoped>
 .capture-caption-canvas {
-  box-sizing: border-box;
   width: 100%;
   height: 100%;
-  padding: 24px;
+  padding: var(--capture-padding);
 
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--caption-gap);
 
-  background-color: #00ff00;
+  background-color: var(--capture-chroma-color);
 }
 </style>

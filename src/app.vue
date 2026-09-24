@@ -3,14 +3,16 @@ import Studio from './lib/studio/studio.vue';
 </script>
 
 <template>
-  <main class="container">
+  <main class="container app-theme--rose-stone">
     <Studio />
   </main>
 </template>
 
 <style scoped>
 .container {
-  height: 100vh;
+  background: var(--app-background);
+  color: var(--app-text-primary);
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
