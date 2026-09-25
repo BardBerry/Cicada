@@ -1,0 +1,18 @@
+:root {
+  --caption-font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --caption-font-weight: 500;
+  --caption-font-size: clamp(20px, 3.5vw, 28px);
+  --caption-line-height: 1.45;
+
+  --caption-background: #fff;
+  --caption-active-background: #fff;
+  --caption-text: #1f1f1f;
+  --caption-border: #e5e5e5;
+  --caption-active-border: #677943;
+  --caption-caret: #677943;
+
+  --caption-padding: 16px 22px;
+  --caption-radius: 19px;
+  --caption-gap: 12px;
+}

@@ -1,0 +1,14 @@
+@import './normalize.css';
+@import './tokens.css';
+@import './app-theme.css';
+@import './caption-theme.css';
+
+body {
+  overflow: hidden;
+  background: var(--app-background);
+  color: var(--app-text);
+
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+}

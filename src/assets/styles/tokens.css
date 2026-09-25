@@ -1,0 +1,65 @@
+:root {
+  /* Neutral */
+  --color-bg: #fff;
+  --color-surface: #e5e5e5;
+  --color-surface-raised: #f5f5f5;
+
+  --color-text: #1f1f1f;
+  --color-text-muted: #6b6b6b; /* #7F7F7F */
+  --color-text-inverse: #fff;
+
+  /* Cicada accent */
+  --color-accent: #677943;
+  --color-accent-soft: #eef2e5;
+
+  /* State */
+  --color-live: #5f8a5a;
+  --color-recording: #b34e36;
+
+  /* Typography*/
+  --font-family-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --font-size-sm: 11px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Spacing */
+
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  /* Controls */
+
+  --control-size-md: 48px;
+
+  /* Border Radius */
+
+  --radius-0: 0;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* Z-Index */
+
+  --z-index-0: 0;
+  --z-index-1: 100;
+  --z-index-2: 200;
+  --z-index-3: 300;
+  --z-index-4: 400;
+  --z-index-5: 500;
+}
