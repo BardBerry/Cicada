@@ -15,4 +15,8 @@
   --caption-padding: 16px 22px;
   --caption-radius: 19px;
   --caption-gap: 12px;
+
+  --caption-fade-duration: 260ms;
+  --caption-move-duration: 260ms;
+  --caption-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
 }
