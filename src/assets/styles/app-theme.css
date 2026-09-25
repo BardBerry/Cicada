@@ -1,0 +1,17 @@
+:root {
+  --app-background: var(--color-bg);
+  --app-surface: var(--color-surface);
+  --app-surface-raised: var(--color-surface-raised);
+  --app-border: var(--color-surface);
+
+  --app-text: var(--color-text);
+  --app-muted: var(--color-text-muted);
+  --app-text-inverse: var(--color-text-inverse);
+
+  --app-accent: var(--color-accent);
+  --app-accent-soft: var(--color-accent-soft);
+
+  --app-live: var(--color-live);
+  --app-recording: var(--color-recording);
+  --app-zen-chroma-color: #00ff00;
+}

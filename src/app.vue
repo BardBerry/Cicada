@@ -1,18 +1,7 @@
 <script setup lang="ts">
-import Studio from './lib/studio/studio.vue';
+import AppShell from '@/app/app-shell.vue';
 </script>
 
 <template>
-  <main class="container">
-    <Studio />
-  </main>
+  <AppShell />
 </template>
-
-<style scoped>
-.container {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-</style>
