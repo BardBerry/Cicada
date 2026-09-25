@@ -84,7 +84,7 @@ function handleKeydown(event: KeyboardEvent) {
 .typing-surface {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: var(--z-index-1);
 
   width: 100%;
   height: 100%;

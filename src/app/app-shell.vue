@@ -35,15 +35,14 @@ const { isZenMode } = storeToRefs(studioUiStore);
 .app-shell__brand,
 .app-shell__navigation {
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-index-1);
   left: var(--shell-inset);
 }
 
 .app-shell__brand {
   top: var(--shell-inset);
-  color: var(--app-accent);
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
   letter-spacing: -0.04em;
   pointer-events: none;
 }
@@ -55,7 +54,7 @@ const { isZenMode } = storeToRefs(studioUiStore);
 
 .app-shell__content {
   position: relative;
-  z-index: 0;
+  z-index: var(--z-index-0);
   width: 100%;
   height: 100%;
   overflow: hidden;

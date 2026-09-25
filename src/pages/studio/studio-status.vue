@@ -47,26 +47,20 @@ const label = computed(() => {
 }
 
 .studio-status__dot {
-  width: 7px;
-  height: 7px;
+  position: relative;
+  top: 1px;
+  width: 8px;
+  height: 8px;
   flex-shrink: 0;
   border-radius: var(--radius-full);
   background: var(--app-live);
-}
-
-.studio-status--recording {
-  color: var(--app-recording);
 }
 
 .studio-status--recording .studio-status__dot {
   background: var(--app-recording);
 }
 
-.studio-status--replaying {
-  color: var(--app-muted);
-}
-
 .studio-status--replaying .studio-status__dot {
-  background: var(--app-accent);
+  background: var(--app-replay);
 }
 </style>
