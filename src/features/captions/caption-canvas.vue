@@ -15,35 +15,38 @@ type TProps = {
 };
 
 const props = defineProps<TProps>();
+const MAX_VISIBLE_COMMITTED_CAPTIONS = 3;
 
-const visibleCaptions = computed(() => {
-  const start = Math.max(0, props.committedCaptions.length - 3);
+const renderedCaptions = computed(() => {
+  const start = Math.max(
+    0,
+    props.committedCaptions.length - (MAX_VISIBLE_COMMITTED_CAPTIONS + 1),
+  );
 
-  return props.committedCaptions.slice(start).map((text, index) => ({
+  const hasExitingCaption =
+    props.committedCaptions.length > MAX_VISIBLE_COMMITTED_CAPTIONS;
+
+  const committed = props.committedCaptions.slice(start).map((text, index) => ({
     text,
     key: start + index,
     active: false,
+    placeholder: false,
+    exiting: hasExitingCaption && index === 0,
   }));
-});
 
-const renderedCaptions = computed(() => {
-  const committed = visibleCaptions.value;
-
-  const active = props.activeText
-    ? [
-        {
-          text: props.activeText,
-          key: 'active',
-          active: true,
-        },
-      ]
-    : [];
+  const anchorCaption = {
+    text: props.activeText || '\u00a0',
+    key: props.committedCaptions.length,
+    active: Boolean(props.activeText),
+    placeholder: !props.activeText,
+    exiting: false,
+  };
 
   if (props.layout.historyDirection === ECaptionHistoryDirection.Down) {
-    return [...active, ...[...committed].reverse()];
+    return [anchorCaption, ...committed.reverse()];
   }
 
-  return [...committed, ...active];
+  return [...committed, anchorCaption];
 });
 </script>
 
@@ -60,15 +63,27 @@ const renderedCaptions = computed(() => {
       '--caption-max-width': `${props.layout.maxWidth}px`,
     }"
   >
-    <div class="caption-canvas__stack">
-      <Caption
+    <TransitionGroup
+      name="caption-item"
+      tag="div"
+      class="caption-canvas__stack"
+    >
+      <div
         v-for="caption in renderedCaptions"
         :key="caption.key"
-        :text="caption.text"
-        :active="caption.active"
-        :show-caret="caption.active && props.showCaret"
-      />
-    </div>
+        class="caption-canvas__item"
+        :class="{
+          'caption-canvas__item--placeholder': caption.placeholder,
+          'caption-canvas__item--exiting': caption.exiting,
+        }"
+      >
+        <Caption
+          :text="caption.text"
+          :active="caption.active"
+          :show-caret="caption.active && props.showCaret"
+        />
+      </div>
+    </TransitionGroup>
   </div>
 </template>
 
@@ -90,23 +105,38 @@ const renderedCaptions = computed(() => {
   width: var(--lane-width);
 }
 
+.caption-canvas__item {
+  display: flex;
+  width: 100%;
+  transition: opacity var(--caption-fade-duration) var(--caption-motion-easing);
+}
+
 /* Horizontal anchor */
+
+.caption-canvas--align-left .caption-canvas__item {
+  justify-content: flex-start;
+}
+
+.caption-canvas--align-center .caption-canvas__item {
+  justify-content: center;
+}
+
+.caption-canvas--align-right .caption-canvas__item {
+  justify-content: flex-end;
+}
 
 .caption-canvas--align-left .caption-canvas__stack {
   left: var(--caption-x);
-  align-items: flex-start;
 }
 
 .caption-canvas--align-center .caption-canvas__stack {
   left: var(--caption-x);
   transform: translateX(-50%);
-  align-items: center;
 }
 
 .caption-canvas--align-right .caption-canvas__stack {
   left: var(--caption-x);
   transform: translateX(-100%);
-  align-items: flex-end;
 }
 
 /* Vertical anchor */
@@ -119,5 +149,16 @@ const renderedCaptions = computed(() => {
 .caption-canvas--history-down .caption-canvas__stack {
   top: var(--caption-y);
   justify-content: flex-start;
+}
+
+.caption-canvas__item--placeholder,
+.caption-canvas__item--exiting {
+  opacity: 0;
+}
+
+.caption-item-move {
+  transition:
+    transform var(--caption-move-duration) var(--caption-motion-easing),
+    opacity var(--caption-fade-duration) var(--caption-motion-easing);
 }
 </style>
