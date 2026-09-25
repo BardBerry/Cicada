@@ -1,21 +1,20 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
 
+export type TAppButtonVariant = 'primary' | 'secondary';
+export type TAppButtonSize = 'standard' | 'icon';
+
 type TProps = {
-  variant?: 'standard' | 'primary' | 'recording' | 'replaying';
-  size?: 'standard' | 'icon';
+  variant?: TAppButtonVariant;
+  size?: TAppButtonSize;
   icon?: Component;
 };
 
 const props = withDefaults(defineProps<TProps>(), {
-  variant: 'standard',
+  variant: 'secondary',
   size: 'standard',
   icon: undefined,
 });
-
-const emit = defineEmits<{
-  click: [event: MouseEvent];
-}>();
 </script>
 
 <template>
@@ -23,7 +22,6 @@ const emit = defineEmits<{
     type="button"
     class="app-button"
     :class="[`app-button--${props.variant}`, `app-button--size-${props.size}`]"
-    @click="emit('click', $event)"
   >
     <component
       :is="props.icon"
@@ -32,6 +30,7 @@ const emit = defineEmits<{
       aria-hidden="true"
       focusable="false"
     />
+
     <slot />
   </button>
 </template>
@@ -44,35 +43,33 @@ const emit = defineEmits<{
   gap: var(--space-2);
   min-height: var(--control-size-md);
   padding: var(--space-3) var(--space-4);
-  background: white;
   color: var(--app-text);
-  border: 0px solid var(--app-border);
+  border: 0;
   border-radius: var(--radius-sm);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   line-height: 1.2;
   white-space: nowrap;
 }
 
-.app-button--standard:hover:not(:disabled) {
-  background: var(--app-accent-soft);
-}
-
 .app-button--primary {
-  background: var(--app-accent);
   color: var(--app-text-inverse);
-  border-color: var(--app-accent);
+  background: var(--app-button-primary-background, var(--app-accent));
 }
 
-.app-button--recording {
-  background: var(--app-recording);
-  color: var(--app-text-inverse);
-  border-color: var(--app-recording);
+.app-button--primary:hover:not(:disabled) {
+  filter: brightness(0.94);
 }
 
-.app-button--replaying {
-  background: var(--app-accent);
-  color: var(--app-text-inverse);
-  border-color: var(--app-accent);
+.app-button--secondary {
+  color: var(--app-text);
+  background: var(--app-button-secondary-background, var(--app-background));
+}
+
+.app-button--secondary:hover:not(:disabled) {
+  background: var(
+    --app-button-secondary-hover-background,
+    var(--app-surface-raised)
+  );
 }
 
 .app-button--size-icon {
@@ -85,11 +82,13 @@ const emit = defineEmits<{
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+  fill: var(--app-button-icon-fill, none);
+  stroke-width: var(--app-button-icon-stroke-width, 2);
 }
 
 .app-button:focus-visible {
   outline: 2px solid var(--app-accent);
-  outline-offset: 3px;
+  outline-offset: 1px;
 }
 
 .app-button:disabled {

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { PanelsTopLeftIcon, Settings2Icon } from '@lucide/vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 
 import { EAppRouteName } from './router/app-route.model';
+
+const route = useRoute();
 
 const destinations = [
   { name: EAppRouteName.Studio, label: 'Studio', icon: PanelsTopLeftIcon },
@@ -21,7 +23,9 @@ const destinations = [
         :to="{ name: destination.name }"
         :aria-label="destination.label"
         class="app-navigation__link"
-        exact-active-class="app-navigation__link--active"
+        :class="{
+          'app-navigation__link--active': route.name === destination.name,
+        }"
       >
         <component
           :is="destination.icon"
@@ -43,9 +47,10 @@ const destinations = [
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-2);
-  background: var(--app-surface);
+  background: var(--app-background);
   border: 1px solid var(--app-border);
   border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
 }
 
 .app-navigation__item {
@@ -59,7 +64,7 @@ const destinations = [
   width: var(--control-size-md);
   height: var(--control-size-md);
   color: var(--app-text);
-  border: 1px solid var(--app-border);
+  background: transparent;
   border-radius: var(--radius-sm);
   text-decoration: none;
 }
@@ -71,12 +76,21 @@ const destinations = [
 }
 
 .app-navigation__link:hover {
+  background: var(--app-surface-raised);
+}
+
+.app-navigation__link--active {
+  color: var(--app-accent);
+  background: var(--app-accent-soft);
+}
+
+.app-navigation__link--active:hover {
   background: var(--app-accent-soft);
 }
 
 .app-navigation__link:focus-visible {
   outline: 2px solid var(--app-accent);
-  outline-offset: 3px;
+  outline-offset: 1px;
 }
 
 .app-navigation__tooltip {
