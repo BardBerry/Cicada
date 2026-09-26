@@ -17,24 +17,24 @@ const destinations = [
     <div
       v-for="destination in destinations"
       :key="destination.name"
-      class="app-navigation__item"
+      class="item"
     >
       <RouterLink
         :to="{ name: destination.name }"
         :aria-label="destination.label"
-        class="app-navigation__link"
+        class="link"
         :class="{
-          'app-navigation__link--active': route.name === destination.name,
+          'link--active': route.name === destination.name,
         }"
       >
         <component
           :is="destination.icon"
-          class="app-navigation__icon"
+          class="icon"
           aria-hidden="true"
           focusable="false"
         />
       </RouterLink>
-      <span class="app-navigation__tooltip" aria-hidden="true">
+      <span class="tooltip" aria-hidden="true">
         {{ destination.label }}
       </span>
     </div>
@@ -53,11 +53,11 @@ const destinations = [
   box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
 }
 
-.app-navigation__item {
+.item {
   position: relative;
 }
 
-.app-navigation__link {
+.link {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,31 +69,31 @@ const destinations = [
   text-decoration: none;
 }
 
-.app-navigation__icon {
+.icon {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
 }
 
-.app-navigation__link:hover {
+.link:hover {
   background: var(--app-surface-raised);
 }
 
-.app-navigation__link--active {
+.link--active {
   color: var(--app-accent);
   background: var(--app-accent-soft);
 }
 
-.app-navigation__link--active:hover {
+.link--active:hover {
   background: var(--app-accent-soft);
 }
 
-.app-navigation__link:focus-visible {
+.link:focus-visible {
   outline: 2px solid var(--app-accent);
   outline-offset: 1px;
 }
 
-.app-navigation__tooltip {
+.tooltip {
   position: absolute;
   top: 50%;
   left: calc(100% + 18px);
@@ -107,8 +107,8 @@ const destinations = [
   pointer-events: none;
 }
 
-.app-navigation__link:hover + .app-navigation__tooltip,
-.app-navigation__link:focus-visible + .app-navigation__tooltip {
+.link:hover + .tooltip,
+.link:focus-visible + .tooltip {
   visibility: visible;
 }
 </style>

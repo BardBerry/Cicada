@@ -9,11 +9,11 @@ const props = defineProps<TProps>();
 
 <template>
   <div class="caption" :class="{ 'caption--active': props.active }">
-    <span class="caption__text">{{ props.text }}</span>
+    <span class="text">{{ props.text }}</span>
 
     <span
-      class="caption__caret"
-      :class="{ 'caption__caret--hidden': !props.active || !props.showCaret }"
+      class="caret"
+      :class="{ 'caret--hidden': !props.active || !props.showCaret }"
       aria-hidden="true"
     ></span>
   </div>
@@ -39,12 +39,12 @@ const props = defineProps<TProps>();
   border-color: var(--caption-active-border);
 }
 
-.caption__text {
+.text {
   white-space: break-spaces;
   overflow-wrap: anywhere;
 }
 
-.caption__caret {
+.caret {
   position: relative;
   display: inline-block;
 
@@ -52,7 +52,7 @@ const props = defineProps<TProps>();
   height: 0;
 }
 
-.caption__caret::after {
+.caret::after {
   content: '';
 
   position: absolute;
@@ -66,7 +66,7 @@ const props = defineProps<TProps>();
   animation: caret-blink 1.2s step-end infinite;
 }
 
-.caption__caret--hidden::after {
+.caret--hidden::after {
   visibility: hidden;
 }
 
@@ -77,7 +77,7 @@ const props = defineProps<TProps>();
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .caption__caret::after {
+  .caret::after {
     animation: none;
   }
 }

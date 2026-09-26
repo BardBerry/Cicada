@@ -32,7 +32,7 @@ const label = computed(() => {
     :class="`studio-status--${props.status}`"
     role="status"
   >
-    <span class="studio-status__dot" aria-hidden="true"></span>
+    <span class="dot" aria-hidden="true"></span>
     {{ label }}
   </div>
 </template>
@@ -46,7 +46,7 @@ const label = computed(() => {
   pointer-events: none;
 }
 
-.studio-status__dot {
+.dot {
   position: relative;
   top: 1px;
   width: 8px;
@@ -56,11 +56,11 @@ const label = computed(() => {
   background: var(--app-live);
 }
 
-.studio-status--recording .studio-status__dot {
+.studio-status--recording .dot {
   background: var(--app-recording);
 }
 
-.studio-status--replaying .studio-status__dot {
+.studio-status--replaying .dot {
   background: var(--app-replay);
 }
 </style>

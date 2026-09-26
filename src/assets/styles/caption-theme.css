@@ -1,22 +1,21 @@
 :root {
-  --caption-font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --caption-font-family: 'Quicksand Variable', sans-serif;
   --caption-font-weight: 500;
-  --caption-font-size: clamp(20px, 3.5vw, 28px);
+  --caption-font-size: clamp(20px, 3.5vw, 24px);
   --caption-line-height: 1.45;
 
-  --caption-background: #fff;
-  --caption-active-background: #fff;
-  --caption-text: #1f1f1f;
-  --caption-border: #e5e5e5;
-  --caption-active-border: #677943;
-  --caption-caret: #677943;
+  --caption-background: var(--color-bg);
+  --caption-active-background: var(--color-bg);
+  --caption-text: #264f5d;
+  --caption-border: var(--color-surface);
+  --caption-active-border: var(--color-surface);
+  --caption-caret: #5d8e9c;
 
-  --caption-padding: 16px 22px;
-  --caption-radius: 19px;
+  --caption-padding: 12px 20px;
+  --caption-radius: 20px;
   --caption-gap: 12px;
 
-  --caption-fade-duration: 260ms;
-  --caption-move-duration: 260ms;
-  --caption-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --caption-fade-duration: 300ms;
+  --caption-move-duration: 300ms;
+  --caption-motion-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }

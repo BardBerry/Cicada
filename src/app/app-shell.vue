@@ -11,11 +11,11 @@ const { isZenMode } = storeToRefs(studioUiStore);
 
 <template>
   <div class="app-shell">
-    <div v-if="!isZenMode" class="app-shell__brand">Cicada</div>
+    <div v-if="!isZenMode" class="brand">Cicada</div>
 
-    <AppNavigation v-if="!isZenMode" class="app-shell__navigation" />
+    <AppNavigation v-if="!isZenMode" class="navigation" />
 
-    <main class="app-shell__content">
+    <main class="main">
       <RouterView />
     </main>
   </div>
@@ -32,14 +32,14 @@ const { isZenMode } = storeToRefs(studioUiStore);
   background: var(--app-background);
 }
 
-.app-shell__brand,
-.app-shell__navigation {
+.brand,
+.navigation {
   position: absolute;
   z-index: var(--z-index-1);
   left: var(--shell-inset);
 }
 
-.app-shell__brand {
+.brand {
   top: var(--shell-inset);
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-semibold);
@@ -47,12 +47,12 @@ const { isZenMode } = storeToRefs(studioUiStore);
   pointer-events: none;
 }
 
-.app-shell__navigation {
+.navigation {
   top: 50%;
   transform: translateY(-50%);
 }
 
-.app-shell__content {
+.main {
   position: relative;
   z-index: var(--z-index-0);
   width: 100%;

@@ -21,9 +21,9 @@ const emit = defineEmits<{
 <template>
   <div class="studio-controls" role="group" aria-label="Studio controls">
     <AppButton
-      class="studio-controls__record"
+      class="record"
       :class="{
-        'studio-controls__record--recording': props.isRecording,
+        'record--recording': props.isRecording,
       }"
       variant="primary"
       :icon="props.isRecording ? SquareIcon : CircleIcon"
@@ -31,40 +31,32 @@ const emit = defineEmits<{
       :aria-label="props.isRecording ? 'Stop recording' : 'Record'"
       @click="emit('toggleRecording')"
     >
-      <span class="studio-controls__label">
-        <span class="studio-controls__label-visible">
+      <span class="label">
+        <span class="label-text">
           {{ props.isRecording ? 'Stop' : 'Record' }}
         </span>
-        <span class="studio-controls__label-measure" aria-hidden="true">
-          Record
-        </span>
+        <span class="label-measure" aria-hidden="true"> Record </span>
       </span>
     </AppButton>
 
     <AppButton
-      class="studio-controls__replay"
+      class="replay"
       :icon="props.isReplaying ? SquareIcon : PlayIcon"
       :disabled="props.isRecording || (!props.canReplay && !props.isReplaying)"
       :aria-label="props.isReplaying ? 'Stop replay' : 'Replay'"
       @click="emit('toggleReplay')"
     >
-      <span class="studio-controls__label">
-        <span class="studio-controls__label-visible">
+      <span class="label">
+        <span class="label-text">
           {{ props.isReplaying ? 'Stop' : 'Replay' }}
         </span>
-        <span class="studio-controls__label-measure" aria-hidden="true">
-          Replay
-        </span>
+        <span class="label-measure" aria-hidden="true"> Replay </span>
       </span>
     </AppButton>
 
-    <span class="studio-controls__divider" aria-hidden="true"></span>
+    <span class="divider" aria-hidden="true"></span>
 
-    <AppButton
-      class="studio-controls__zen"
-      :icon="MaximizeIcon"
-      @click="emit('enterZen')"
-    >
+    <AppButton class="zen" :icon="MaximizeIcon" @click="emit('enterZen')">
       Zen
     </AppButton>
   </div>
@@ -85,37 +77,37 @@ const emit = defineEmits<{
   box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
 }
 
-.studio-controls__record {
+.record {
   --app-button-primary-background: var(--app-live);
   --app-button-icon-fill: currentColor;
 }
 
-.studio-controls__record--recording {
+.record--recording {
   --app-button-primary-background: var(--app-recording);
 }
 
-.studio-controls__replay {
+.replay {
   --app-button-icon-fill: currentColor;
 }
 
-.studio-controls__zen {
+.zen {
   --app-button-icon-stroke-width: 2.5;
 }
 
-.studio-controls__label {
+.label {
   display: inline-grid;
 }
 
-.studio-controls__label-visible,
-.studio-controls__label-measure {
+.label-text,
+.label-measure {
   grid-area: 1 / 1;
 }
 
-.studio-controls__label-measure {
+.label-measure {
   visibility: hidden;
 }
 
-.studio-controls__divider {
+.divider {
   width: 1px;
   height: 24px;
   background: var(--app-border);

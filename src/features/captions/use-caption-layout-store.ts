@@ -15,7 +15,7 @@ export const useCaptionLayoutStore = defineStore('caption-layout', () => {
     },
     horizontalAlignment: ECaptionHorizontalAlignment.Center,
     historyDirection: ECaptionHistoryDirection.Up,
-    maxWidth: 400,
+    maxWidth: 500,
   });
 
   return {
