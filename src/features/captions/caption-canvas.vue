@@ -63,18 +63,14 @@ const renderedCaptions = computed(() => {
       '--caption-max-width': `${props.layout.maxWidth}px`,
     }"
   >
-    <TransitionGroup
-      name="caption-item"
-      tag="div"
-      class="caption-canvas__stack"
-    >
+    <TransitionGroup name="caption-item" tag="div" class="stack">
       <div
         v-for="caption in renderedCaptions"
         :key="caption.key"
-        class="caption-canvas__item"
+        class="item"
         :class="{
-          'caption-canvas__item--placeholder': caption.placeholder,
-          'caption-canvas__item--exiting': caption.exiting,
+          'item--placeholder': caption.placeholder,
+          'item--exiting': caption.exiting,
         }"
       >
         <Caption
@@ -97,7 +93,7 @@ const renderedCaptions = computed(() => {
   pointer-events: none;
 }
 
-.caption-canvas__stack {
+.stack {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -105,7 +101,7 @@ const renderedCaptions = computed(() => {
   width: var(--lane-width);
 }
 
-.caption-canvas__item {
+.item {
   display: flex;
   width: 100%;
   transition: opacity var(--caption-fade-duration) var(--caption-motion-easing);
@@ -113,46 +109,46 @@ const renderedCaptions = computed(() => {
 
 /* Horizontal anchor */
 
-.caption-canvas--align-left .caption-canvas__item {
+.caption-canvas--align-left .item {
   justify-content: flex-start;
 }
 
-.caption-canvas--align-center .caption-canvas__item {
+.caption-canvas--align-center .item {
   justify-content: center;
 }
 
-.caption-canvas--align-right .caption-canvas__item {
+.caption-canvas--align-right .item {
   justify-content: flex-end;
 }
 
-.caption-canvas--align-left .caption-canvas__stack {
+.caption-canvas--align-left .stack {
   left: var(--caption-x);
 }
 
-.caption-canvas--align-center .caption-canvas__stack {
+.caption-canvas--align-center .stack {
   left: var(--caption-x);
   transform: translateX(-50%);
 }
 
-.caption-canvas--align-right .caption-canvas__stack {
+.caption-canvas--align-right .stack {
   left: var(--caption-x);
   transform: translateX(-100%);
 }
 
 /* Vertical anchor */
 
-.caption-canvas--history-up .caption-canvas__stack {
+.caption-canvas--history-up .stack {
   bottom: calc(100% - var(--caption-y));
   justify-content: flex-end;
 }
 
-.caption-canvas--history-down .caption-canvas__stack {
+.caption-canvas--history-down .stack {
   top: var(--caption-y);
   justify-content: flex-start;
 }
 
-.caption-canvas__item--placeholder,
-.caption-canvas__item--exiting {
+.item--placeholder,
+.item--exiting {
   opacity: 0;
 }
 

@@ -1,4 +1,5 @@
 import './assets/styles/main.css';
+import '@fontsource-variable/quicksand';
 
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';

@@ -122,21 +122,13 @@ onUnmounted(exitZenMode);
       @focus="isTypingFocused = true"
       @blur="isTypingFocused = false"
     />
-    <div
-      v-if="showTypingPrompt"
-      class="studio__typing-prompt"
-      aria-hidden="true"
-    >
+    <div v-if="showTypingPrompt" class="typing-prompt" aria-hidden="true">
       Click anywhere to type
     </div>
-    <StudioStatus
-      v-if="!isZenMode"
-      class="studio__status"
-      :status="studioStatus"
-    />
+    <StudioStatus v-if="!isZenMode" class="status" :status="studioStatus" />
     <StudioControls
       v-if="!isZenMode"
-      class="studio__controls"
+      class="controls"
       :is-recording="isRecording"
       :is-replaying="isReplaying"
       :can-replay="Boolean(lastRecording)"
@@ -176,7 +168,7 @@ onUnmounted(exitZenMode);
   background: var(--app-zen-chroma-color);
 }
 
-.studio__typing-prompt {
+.typing-prompt {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -186,7 +178,7 @@ onUnmounted(exitZenMode);
   pointer-events: none;
 }
 
-.studio__controls {
+.controls {
   position: absolute;
   z-index: var(--z-index-2);
   bottom: var(--chrome-inset);
@@ -195,7 +187,7 @@ onUnmounted(exitZenMode);
   max-width: calc(100% - 2 * var(--chrome-inset));
 }
 
-.studio__status {
+.status {
   position: absolute;
   top: var(--chrome-inset);
   right: var(--chrome-inset);

@@ -26,7 +26,7 @@ const props = withDefaults(defineProps<TProps>(), {
     <component
       :is="props.icon"
       v-if="props.icon"
-      class="app-button__icon"
+      class="icon"
       aria-hidden="true"
       focusable="false"
     />
@@ -78,7 +78,7 @@ const props = withDefaults(defineProps<TProps>(), {
   padding: var(--space-2);
 }
 
-.app-button__icon {
+.icon {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
