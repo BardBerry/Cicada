@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { AnimatePresence, LayoutGroup, motion, MotionConfig } from 'motion-v';
+import { computed, useId } from 'vue';
 
 import Caption from './caption.vue';
 import {
@@ -15,38 +16,39 @@ type TProps = {
 };
 
 const props = defineProps<TProps>();
+
+const layoutGroupId = useId();
+
 const MAX_VISIBLE_COMMITTED_CAPTIONS = 3;
 
-const renderedCaptions = computed(() => {
+const captionTransition = {
+  type: 'tween' as const,
+  duration: 0.3,
+  ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
+};
+
+const activeCaptionId = computed(() => props.committedCaptions.length);
+
+const layoutDependency = computed(
+  () => `${props.committedCaptions.length}:${props.layout.historyDirection}`,
+);
+
+const renderedHistory = computed(() => {
   const start = Math.max(
     0,
-    props.committedCaptions.length - (MAX_VISIBLE_COMMITTED_CAPTIONS + 1),
+    props.committedCaptions.length - MAX_VISIBLE_COMMITTED_CAPTIONS,
   );
 
-  const hasExitingCaption =
-    props.committedCaptions.length > MAX_VISIBLE_COMMITTED_CAPTIONS;
-
-  const committed = props.committedCaptions.slice(start).map((text, index) => ({
+  const captions = props.committedCaptions.slice(start).map((text, index) => ({
+    id: start + index,
     text,
-    key: start + index,
-    active: false,
-    placeholder: false,
-    exiting: hasExitingCaption && index === 0,
   }));
 
-  const anchorCaption = {
-    text: props.activeText || '\u00a0',
-    key: props.committedCaptions.length,
-    active: Boolean(props.activeText),
-    placeholder: !props.activeText,
-    exiting: false,
-  };
-
   if (props.layout.historyDirection === ECaptionHistoryDirection.Down) {
-    return [anchorCaption, ...committed.reverse()];
+    return captions.reverse();
   }
 
-  return [...committed, anchorCaption];
+  return captions;
 });
 </script>
 
@@ -63,23 +65,62 @@ const renderedCaptions = computed(() => {
       '--caption-max-width': `${props.layout.maxWidth}px`,
     }"
   >
-    <TransitionGroup name="caption-item" tag="div" class="stack">
-      <div
-        v-for="caption in renderedCaptions"
-        :key="caption.key"
-        class="item"
-        :class="{
-          'item--placeholder': caption.placeholder,
-          'item--exiting': caption.exiting,
-        }"
-      >
-        <Caption
-          :text="caption.text"
-          :active="caption.active"
-          :show-caret="caption.active && props.showCaret"
-        />
-      </div>
-    </TransitionGroup>
+    <MotionConfig reduced-motion="never">
+      <LayoutGroup :id="layoutGroupId">
+        <div class="lane">
+          <div class="anchor">
+            <motion.div
+              :key="activeCaptionId"
+              class="item"
+              :layout-id="`caption-${activeCaptionId}`"
+              layout="position"
+              :layout-dependency="layoutDependency"
+              :initial="false"
+              :animate="{
+                opacity: props.activeText ? 1 : 0,
+              }"
+              :transition="captionTransition"
+            >
+              <Caption
+                :text="props.activeText || '\u00a0'"
+                :active="Boolean(props.activeText)"
+                :show-caret="Boolean(props.activeText) && props.showCaret"
+              />
+            </motion.div>
+
+            <div class="history">
+              <AnimatePresence mode="sync">
+                <motion.div
+                  v-for="caption in renderedHistory"
+                  :key="caption.id"
+                  class="item"
+                  :layout-id="`caption-${caption.id}`"
+                  layout="position"
+                  :layout-dependency="layoutDependency"
+                  :initial="false"
+                  :animate="{ opacity: 1 }"
+                  :exit="{
+                    opacity: 0,
+                    y:
+                      props.layout.historyDirection ===
+                      ECaptionHistoryDirection.Up
+                        ? -12
+                        : 12,
+                  }"
+                  :transition="captionTransition"
+                >
+                  <Caption
+                    :text="caption.text"
+                    :active="false"
+                    :show-caret="false"
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </LayoutGroup>
+    </MotionConfig>
   </div>
 </template>
 
@@ -93,68 +134,88 @@ const renderedCaptions = computed(() => {
   pointer-events: none;
 }
 
-.stack {
+.lane {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  gap: var(--caption-gap);
+  top: 0;
+  bottom: 0;
   width: var(--lane-width);
+}
+
+.anchor {
+  position: absolute;
+  top: var(--caption-y);
+  left: 0;
+
+  display: flex;
+  width: 100%;
+
+  transform: translateY(-50%);
 }
 
 .item {
   display: flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.history {
+  position: absolute;
+  left: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--caption-gap);
+
   width: 100%;
-  transition: opacity var(--caption-fade-duration) var(--caption-motion-easing);
 }
 
 /* Horizontal anchor */
 
-.caption-canvas--align-left .item {
-  justify-content: flex-start;
-}
-
-.caption-canvas--align-center .item {
-  justify-content: center;
-}
-
-.caption-canvas--align-right .item {
-  justify-content: flex-end;
-}
-
-.caption-canvas--align-left .stack {
+.caption-canvas--align-left .lane {
   left: var(--caption-x);
 }
 
-.caption-canvas--align-center .stack {
+.caption-canvas--align-center .lane {
   left: var(--caption-x);
   transform: translateX(-50%);
 }
 
-.caption-canvas--align-right .stack {
+.caption-canvas--align-right .lane {
   left: var(--caption-x);
   transform: translateX(-100%);
 }
 
-/* Vertical anchor */
-
-.caption-canvas--history-up .stack {
-  bottom: calc(100% - var(--caption-y));
-  justify-content: flex-end;
-}
-
-.caption-canvas--history-down .stack {
-  top: var(--caption-y);
+.caption-canvas--align-left .anchor {
   justify-content: flex-start;
 }
 
-.item--placeholder,
-.item--exiting {
-  opacity: 0;
+.caption-canvas--align-center .anchor {
+  justify-content: center;
 }
 
-.caption-item-move {
-  transition:
-    transform var(--caption-move-duration) var(--caption-motion-easing),
-    opacity var(--caption-fade-duration) var(--caption-motion-easing);
+.caption-canvas--align-right .anchor {
+  justify-content: flex-end;
+}
+
+.caption-canvas--align-left .history {
+  align-items: flex-start;
+}
+
+.caption-canvas--align-center .history {
+  align-items: center;
+}
+
+.caption-canvas--align-right .history {
+  align-items: flex-end;
+}
+
+/* Vertical history direction */
+
+.caption-canvas--history-up .history {
+  bottom: calc(100% + var(--caption-gap));
+}
+
+.caption-canvas--history-down .history {
+  top: calc(100% + var(--caption-gap));
 }
 </style>

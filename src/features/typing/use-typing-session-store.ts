@@ -13,6 +13,7 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
     text: '',
     captions: [],
   });
+  const sessionRevision = ref(0);
 
   const lastRecording = ref<TTypingRecording | null>(null);
 
@@ -45,6 +46,8 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
   }
 
   function resetSession() {
+    // Preserve logical session identity when replay synchronously repopulates state.
+    sessionRevision.value += 1;
     session.text = '';
     session.captions = [];
   }
@@ -84,6 +87,7 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
 
   return {
     session,
+    sessionRevision,
     lastRecording,
     isRecording,
     isReplaying,

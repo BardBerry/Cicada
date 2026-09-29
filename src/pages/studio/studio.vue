@@ -23,7 +23,7 @@ const captionLayoutStore = useCaptionLayoutStore();
 
 const { layout: captionLayout } = storeToRefs(captionLayoutStore);
 const { studioMode, isZenMode } = storeToRefs(studioUiStore);
-const { session, lastRecording, isRecording, isReplaying } =
+const { session, sessionRevision, lastRecording, isRecording, isReplaying } =
   storeToRefs(typingSessionStore);
 
 const { exitZenMode, enterZenMode } = studioUiStore;
@@ -109,6 +109,7 @@ onUnmounted(exitZenMode);
 <template>
   <div class="studio" :class="{ 'studio--zen': isZenMode }">
     <CaptionCanvas
+      :key="sessionRevision"
       :committed-captions="session.captions"
       :active-text="session.text"
       :layout="captionLayout"
