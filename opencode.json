@@ -1,4 +1,15 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": ["docs/code-style/css.md"]
+  "mcp": {
+    "motion": {
+      "type": "remote",
+      "url": "https://mcp.motion.dev",
+      "enabled": true
+    },
+    "motion-plus": {
+      "type": "remote",
+      "url": "https://mcp.motion.dev/plus",
+      "enabled": true
+    }
+  }
 }

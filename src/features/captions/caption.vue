@@ -48,7 +48,7 @@ const props = defineProps<TProps>();
   position: relative;
   display: inline-block;
 
-  width: 4px;
+  width: 0;
   height: 0;
 }
 
@@ -57,7 +57,7 @@ const props = defineProps<TProps>();
 
   position: absolute;
   left: 2px;
-  bottom: -0.2em;
+  bottom: -0.15em;
 
   width: 2px;
   height: 1em;
@@ -73,12 +73,6 @@ const props = defineProps<TProps>();
 @keyframes caret-blink {
   50% {
     opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .caret::after {
-    animation: none;
   }
 }
 </style>

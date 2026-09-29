@@ -11,7 +11,7 @@ export const useCaptionLayoutStore = defineStore('caption-layout', () => {
   const layout = reactive<TCaptionLayout>({
     position: {
       x: 0.5,
-      y: 0.6,
+      y: 0.5,
     },
     horizontalAlignment: ECaptionHorizontalAlignment.Center,
     historyDirection: ECaptionHistoryDirection.Up,
