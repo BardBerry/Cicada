@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, shallowReadonly } from 'vue';
 
 import type { TTypingRecording } from '@/features/typing/typing-recording.model';
 
@@ -15,7 +15,13 @@ type TStageRecordingParams = {
 
 type TReplaceRecordingParams = {
   expectedRecordingId: string | null;
+  expectedGeneration: number;
   nextRecording: TWorkspaceRecording;
+};
+
+type TCompleteSaveParams = {
+  attemptId: string;
+  expectedGeneration: number;
 };
 
 export const useRecordingWorkspaceStore = defineStore(
@@ -23,6 +29,7 @@ export const useRecordingWorkspaceStore = defineStore(
   () => {
     const workspaceRecording = ref<TWorkspaceRecording | null>(null);
     const saveAttempt = ref<TWorkspaceSaveAttempt | null>(null);
+    const workspaceGeneration = ref(0);
 
     function stageRecording({
       recording,
@@ -32,6 +39,7 @@ export const useRecordingWorkspaceStore = defineStore(
 
       return replaceRecording({
         expectedRecordingId,
+        expectedGeneration: workspaceGeneration.value,
         nextRecording: {
           id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
@@ -44,14 +52,17 @@ export const useRecordingWorkspaceStore = defineStore(
 
     function replaceRecording({
       expectedRecordingId,
+      expectedGeneration,
       nextRecording,
     }: TReplaceRecordingParams): boolean {
       if (saveAttempt.value) return false;
+      if (workspaceGeneration.value !== expectedGeneration) return false;
       if ((workspaceRecording.value?.id ?? null) !== expectedRecordingId) {
         return false;
       }
 
-      workspaceRecording.value = nextRecording;
+      workspaceRecording.value = ownWorkspaceRecording(nextRecording);
+      workspaceGeneration.value += 1;
       return true;
     }
 
@@ -62,6 +73,7 @@ export const useRecordingWorkspaceStore = defineStore(
       }
 
       workspaceRecording.value = null;
+      workspaceGeneration.value += 1;
       return true;
     }
 
@@ -81,16 +93,21 @@ export const useRecordingWorkspaceStore = defineStore(
         return false;
       }
 
-      saveAttempt.value = attempt;
+      saveAttempt.value = Object.freeze({ ...attempt });
+      workspaceGeneration.value += 1;
       return true;
     }
 
-    function completeSave(attemptId: string): boolean {
+    function completeSave({
+      attemptId,
+      expectedGeneration,
+    }: TCompleteSaveParams): boolean {
       const current = workspaceRecording.value;
       const attempt = saveAttempt.value;
 
       if (!current || !attempt) return false;
       if (attempt.id !== attemptId) return false;
+      if (workspaceGeneration.value !== expectedGeneration) return false;
 
       if (
         current.id !== attempt.recordingId ||
@@ -103,12 +120,13 @@ export const useRecordingWorkspaceStore = defineStore(
         return false;
       }
 
-      workspaceRecording.value = {
+      workspaceRecording.value = Object.freeze({
         ...current,
         projectId: attempt.projectId,
         hasUnsavedChanges: false,
-      };
+      });
       saveAttempt.value = null;
+      workspaceGeneration.value += 1;
       return true;
     }
 
@@ -116,12 +134,14 @@ export const useRecordingWorkspaceStore = defineStore(
       if (saveAttempt.value?.id !== attemptId) return false;
 
       saveAttempt.value = null;
+      workspaceGeneration.value += 1;
       return true;
     }
 
     return {
-      workspaceRecording,
-      saveAttempt,
+      workspaceRecording: shallowReadonly(workspaceRecording),
+      saveAttempt: shallowReadonly(saveAttempt),
+      workspaceGeneration: shallowReadonly(workspaceGeneration),
       stageRecording,
       replaceRecording,
       clearRecording,
@@ -131,3 +151,20 @@ export const useRecordingWorkspaceStore = defineStore(
     };
   },
 );
+
+function ownWorkspaceRecording(
+  nextRecording: TWorkspaceRecording,
+): TWorkspaceRecording {
+  // Sever caller aliases and disallow in-place edits, including during retries.
+  const recording: TTypingRecording = {
+    durationMs: nextRecording.recording.durationMs,
+    events: nextRecording.recording.events.map(({ elapsedMs, event }) =>
+      Object.freeze({ elapsedMs, event: Object.freeze({ ...event }) }),
+    ),
+  };
+
+  Object.freeze(recording.events);
+  Object.freeze(recording);
+
+  return Object.freeze({ ...nextRecording, recording });
+}

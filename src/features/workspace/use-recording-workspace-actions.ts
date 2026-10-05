@@ -40,6 +40,7 @@ export function useRecordingWorkspaceActions() {
     }
 
     const expectedRecordingId = current?.id ?? null;
+    const expectedGeneration = workspaceStore.workspaceGeneration;
     isBusy.value = true;
 
     try {
@@ -52,6 +53,7 @@ export function useRecordingWorkspaceActions() {
 
       return workspaceStore.replaceRecording({
         expectedRecordingId,
+        expectedGeneration,
         nextRecording: {
           id: loaded.summary.id,
           createdAt: loaded.summary.createdAt,
@@ -95,6 +97,7 @@ export function useRecordingWorkspaceActions() {
 
     if (!workspaceStore.retainSaveAttempt(attempt)) return false;
 
+    const expectedGeneration = workspaceStore.workspaceGeneration;
     isBusy.value = true;
 
     try {
@@ -108,7 +111,10 @@ export function useRecordingWorkspaceActions() {
 
       if (!summary) return false;
 
-      return workspaceStore.completeSave(attempt.id);
+      return workspaceStore.completeSave({
+        attemptId: attempt.id,
+        expectedGeneration,
+      });
     } finally {
       isBusy.value = false;
     }
@@ -133,6 +139,7 @@ export function useRecordingWorkspaceActions() {
       return false;
     }
 
+    const expectedGeneration = workspaceStore.workspaceGeneration;
     isBusy.value = true;
 
     try {
@@ -146,7 +153,10 @@ export function useRecordingWorkspaceActions() {
 
       if (!summary) return false;
 
-      return workspaceStore.completeSave(attempt.id);
+      return workspaceStore.completeSave({
+        attemptId: attempt.id,
+        expectedGeneration,
+      });
     } finally {
       isBusy.value = false;
     }

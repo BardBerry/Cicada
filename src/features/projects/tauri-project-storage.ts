@@ -1,7 +1,9 @@
 import { BaseDirectory, join } from '@tauri-apps/api/path';
 import {
   exists,
+  type FileHandle,
   mkdir,
+  open,
   readDir,
   readTextFile,
   remove,
@@ -117,21 +119,50 @@ export const tauriProjectStorage: TProjectStorage = {
         expectedContents: recordingFileContents,
       });
     } else {
+      let file: FileHandle | null = null;
+
       try {
-        await writeTextFile(recordingFile, recordingFileContents, {
+        file = await open(recordingFile, {
           ...APP_DATA_OPTIONS,
+          write: true,
           createNew: true,
         });
       } catch (error) {
-        if (!(await exists(recordingFile, APP_DATA_OPTIONS))) throw error;
+        // An unsuccessful open never grants ownership of an existing file.
+        try {
+          await assertRecordingFileMatches({
+            recordingFile,
+            recordingId: recording.id,
+            expectedContents: recordingFileContents,
+          });
+        } catch {
+          throw error;
+        }
+      }
 
-        await assertRecordingFileMatches({
-          recordingFile,
-          recordingId: recording.id,
-          expectedContents: recordingFileContents,
-        });
+      if (file) {
+        try {
+          const bytes = new TextEncoder().encode(recordingFileContents);
+          let offset = 0;
 
-        // add later error-reporting improvement
+          while (offset < bytes.length) {
+            const written = await file.write(bytes.subarray(offset));
+
+            if (written === 0) {
+              throw new Error('Recording file write made no progress');
+            }
+
+            offset += written;
+          }
+        } catch (error) {
+          // Only a successful exclusive open permits partial-file cleanup.
+          await file.close().catch(() => {});
+          await remove(recordingFile, APP_DATA_OPTIONS).catch(() => {});
+          throw error;
+        }
+
+        // A close failure leaves complete data for an idempotent retry.
+        await file.close();
       }
     }
 
@@ -161,14 +192,11 @@ export const tauriProjectStorage: TProjectStorage = {
 
     await writeTextFile(projectFile, contents, APP_DATA_OPTIONS);
 
-    if (!(await exists(recordingFile, APP_DATA_OPTIONS))) {
-      return { cleanupWarning: null };
-    }
-
     try {
       await remove(recordingFile, APP_DATA_OPTIONS);
       return { cleanupWarning: null };
     } catch (error) {
+      // The plugin exposes strings, not reliable NotFound error codes.
       return {
         cleanupWarning: `Recording was removed from the project, but its file could not be deleted: ${getErrorMessage(error)}`,
       };
