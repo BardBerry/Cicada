@@ -15,8 +15,6 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
   });
   const sessionRevision = ref(0);
 
-  const lastRecording = ref<TTypingRecording | null>(null);
-
   const {
     isRecording,
     startRecording: startTypingRecording,
@@ -52,29 +50,28 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
     session.captions = [];
   }
 
-  function startRecording() {
-    if (isRecording.value) return;
-    if (isReplaying.value) return;
+  function startRecording(): boolean {
+    if (isRecording.value || isReplaying.value) return false;
 
     resetSession();
 
     startTypingRecording();
+    return isRecording.value;
   }
 
-  function stopRecording() {
-    if (!isRecording.value) return;
+  function stopRecording(): TTypingRecording | null {
+    if (!isRecording.value) return null;
 
-    lastRecording.value = stopTypingRecording();
+    return stopTypingRecording();
   }
 
-  function startReplay() {
-    if (!lastRecording.value) return;
+  function startReplay(recording: TTypingRecording) {
     if (isRecording.value) return;
 
     resetSession();
 
     startTypingReplay({
-      recording: lastRecording.value,
+      recording,
       onEvent: applySessionEvent,
     });
   }
@@ -88,7 +85,6 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
   return {
     session,
     sessionRevision,
-    lastRecording,
     isRecording,
     isReplaying,
     startRecording,
