@@ -11,6 +11,7 @@ import type {
 type TStageRecordingParams = {
   recording: TTypingRecording;
   expectedRecordingId: string | null;
+  expectedGeneration: number;
 };
 
 type TReplaceRecordingParams = {
@@ -34,12 +35,13 @@ export const useRecordingWorkspaceStore = defineStore(
     function stageRecording({
       recording,
       expectedRecordingId,
+      expectedGeneration,
     }: TStageRecordingParams): boolean {
       if (saveAttempt.value) return false;
 
       return replaceRecording({
         expectedRecordingId,
-        expectedGeneration: workspaceGeneration.value,
+        expectedGeneration,
         nextRecording: {
           id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),

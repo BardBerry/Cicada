@@ -6,6 +6,7 @@ import AppButton from '@/shared/ui/app-button.vue';
 type TProps = {
   isRecording: boolean;
   isReplaying: boolean;
+  canRecord: boolean;
   canReplay: boolean;
 };
 
@@ -27,7 +28,7 @@ const emit = defineEmits<{
       }"
       variant="primary"
       :icon="props.isRecording ? SquareIcon : CircleIcon"
-      :disabled="props.isReplaying"
+      :disabled="!props.isRecording && !props.canRecord"
       :aria-label="props.isRecording ? 'Stop recording' : 'Record'"
       @click="emit('toggleRecording')"
     >

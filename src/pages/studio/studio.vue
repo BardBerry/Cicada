@@ -9,10 +9,12 @@ import CaptionCanvas from '@/features/captions/caption-canvas.vue';
 import { useCaptionLayoutStore } from '@/features/captions/use-caption-layout-store';
 import TypingSurface from '@/features/typing/typing-surface.vue';
 import { useTypingSessionStore } from '@/features/typing/use-typing-session-store';
+import { useRecordingWorkspaceStore } from '@/features/workspace/use-recording-workspace-store';
 
 import { EStudioStatus } from './studio.model';
 import StudioControls from './studio-controls.vue';
 import StudioStatus from './studio-status.vue';
+import { useStudioRecordingWorkflowStore } from './use-studio-recording-workflow-store';
 
 const typingSurface = useTemplateRef('typingSurface');
 const isTypingFocused = ref(false);
@@ -20,11 +22,16 @@ const isTypingFocused = ref(false);
 const studioUiStore = useStudioUiStore();
 const typingSessionStore = useTypingSessionStore();
 const captionLayoutStore = useCaptionLayoutStore();
+const workspaceStore = useRecordingWorkspaceStore();
+const recordingWorkflowStore = useStudioRecordingWorkflowStore();
 
 const { layout: captionLayout } = storeToRefs(captionLayoutStore);
 const { studioMode, isZenMode } = storeToRefs(studioUiStore);
-const { session, sessionRevision, lastRecording, isRecording, isReplaying } =
+const { session, sessionRevision, isRecording, isReplaying } =
   storeToRefs(typingSessionStore);
+const { workspaceRecording, workspaceGeneration, saveAttempt } =
+  storeToRefs(workspaceStore);
+const { captureReplacementTarget } = storeToRefs(recordingWorkflowStore);
 
 const { exitZenMode, enterZenMode } = studioUiStore;
 const {
@@ -34,6 +41,18 @@ const {
   stopReplay,
   handleLiveTypingEvent,
 } = typingSessionStore;
+const { stageRecording } = workspaceStore;
+const { retainCaptureReplacementTarget, clearCaptureReplacementTarget } =
+  recordingWorkflowStore;
+
+const canRecord = computed(
+  () =>
+    !isRecording.value &&
+    !isReplaying.value &&
+    !workspaceRecording.value?.hasUnsavedChanges &&
+    !saveAttempt.value &&
+    !captureReplacementTarget.value,
+);
 
 const isSessionEmpty = computed(
   () => !session.value.text && session.value.captions.length === 0,
@@ -61,18 +80,45 @@ const studioStatus = computed(() => {
 
 function executeCommand(command: EAppCommand) {
   switch (command) {
-    case EAppCommand.StartRecording:
-      startRecording();
+    case EAppCommand.StartRecording: {
+      if (!canRecord.value) break;
+
+      const target = {
+        expectedRecordingId: workspaceRecording.value?.id ?? null,
+        expectedGeneration: workspaceGeneration.value,
+      };
+
+      if (!startRecording()) break;
+      if (!retainCaptureReplacementTarget(target)) {
+        stopRecording();
+        break;
+      }
+
       typingSurface.value?.focus();
       break;
+    }
 
-    case EAppCommand.StopRecording:
-      stopRecording();
+    case EAppCommand.StopRecording: {
+      const target = captureReplacementTarget.value;
+
+      try {
+        const recording = stopRecording();
+        if (!recording || !target) break;
+        if (workspaceRecording.value?.hasUnsavedChanges) break;
+
+        stageRecording({ recording, ...target });
+      } finally {
+        // A failed stop can leave capture active and still need its original target.
+        if (!isRecording.value) clearCaptureReplacementTarget();
+      }
+
       break;
+    }
 
     case EAppCommand.StartReplay:
+      if (!workspaceRecording.value || isRecording.value) break;
       typingSurface.value?.blur();
-      startReplay();
+      startReplay(workspaceRecording.value.recording);
       break;
 
     case EAppCommand.StopReplay:
@@ -132,7 +178,8 @@ onUnmounted(exitZenMode);
       class="controls"
       :is-recording="isRecording"
       :is-replaying="isReplaying"
-      :can-replay="Boolean(lastRecording)"
+      :can-record="canRecord"
+      :can-replay="Boolean(workspaceRecording)"
       @toggle-recording="
         executeCommand(
           isRecording ? EAppCommand.StopRecording : EAppCommand.StartRecording,
