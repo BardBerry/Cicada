@@ -73,6 +73,8 @@ Current examples include:
 ```text
 features/typing/
 features/captions/
+features/projects/
+features/workspace/
 ```
 
 A feature may contain:
@@ -100,6 +102,22 @@ app
 ```
 
 Feature code should not know which route or page is currently rendering it unless that knowledge is genuinely part of the feature.
+
+The persistence-related feature dependencies are intentionally directional:
+
+```text
+workspace
+  → projects
+
+projects
+  → typing recording model
+
+typing
+  ↛ projects
+  ↛ workspace
+```
+
+The projects feature owns project metadata and persistence operations. The workspace feature owns the one recording currently being worked on and coordinates project operations without implementing filesystem behavior. The typing feature remains independent of project membership and persistence workflows.
 
 ---
 
@@ -263,6 +281,21 @@ typing-session store
 ```
 
 Do not force everything belonging to a feature into one store, one component, or one folder-level abstraction.
+
+For recording persistence, the lifetime owners are separate:
+
+```text
+typing-session store
+→ live typing, capture, and replay state
+
+project store
+→ project catalog, recording metadata, persistence operations, and persistence errors
+
+recording-workspace store
+→ current draft or saved recording and failed-save attempt state
+```
+
+Navigating between projects must not replace the workspace recording or change its presentation. A draft may exist without belonging to a project.
 
 ---
 

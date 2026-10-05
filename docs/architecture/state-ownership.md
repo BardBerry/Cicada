@@ -145,6 +145,31 @@ This does not mean recording and replay each need their own stores.
 
 Prefer one meaningful owner over many tiny stores created only for structural symmetry.
 
+### Recording and Project Ownership
+
+The typing session, project catalog, and recording workspace have different lifetimes and responsibilities:
+
+```text
+TypingSessionStore:
+  live session
+  recording capture
+  replay
+
+ProjectStore:
+  project catalog and metadata
+  project and recording persistence operations
+  persistence errors and cleanup warnings
+
+RecordingWorkspaceStore:
+  one current draft or saved recording
+  failed-save attempt identity
+  unsaved-work replacement guards
+```
+
+The workspace calls the Project Store for persistence. It does not construct manifests, resolve paths, or duplicate persistence errors. Project navigation does not change workspace state.
+
+A failed save is ambiguous because persistence may have completed before the caller observed the failure. Abandoning a save attempt only unlocks the draft so it can be saved elsewhere, discarded, or replaced. It does not roll back storage. The original project may contain no recording, an unreferenced recording file, or a complete valid recording. A future confirmation dialog must explain that possibility, but dialog state and wording do not belong in the workspace store.
+
 ---
 
 ## Store State Is Not Persistence

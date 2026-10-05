@@ -147,7 +147,15 @@ Do not convert all functions to arrow functions merely for stylistic consistency
 
 ## Parameter Types
 
-When a function needs multiple related parameters, prefer an object parameter with a named type.
+Use a regular parameter when a function has one simple, unambiguous argument:
+
+```ts
+function loadProject(projectId: string) {
+  // ...
+}
+```
+
+When a function needs two or more related arguments, prefer one object parameter with a named type.
 
 Example:
 
@@ -167,7 +175,11 @@ function applyTypingSessionEvent({
 
 This is especially useful when several parameters have similar primitive types or when call-site meaning benefits from named fields.
 
-Do not create parameter-object types for trivial single-argument functions.
+Small parameter objects, usually with two or three properties, may be destructured directly in the function signature. For larger parameter objects, accepting `params` and destructuring inside the function can keep the signature readable.
+
+Avoid positional boolean arguments, especially when they represent confirmation or authorization. Prefer a descriptive property or an identity-bound value such as the draft ID being authorized for replacement.
+
+These are readability conventions rather than rigid property-count limits. Do not create parameter-object types for trivial single-argument functions.
 
 ---
 
