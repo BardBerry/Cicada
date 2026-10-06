@@ -1,5 +1,7 @@
 import { onMounted, onUnmounted } from 'vue';
 
+import { isKeyboardEventOwnedByUi } from '@/shared/ui/ui-keyboard-scope';
+
 import type { EAppCommand } from '../commands/app-command.model';
 import type { TKeymapContext } from './keymap.model';
 import { resolveKeydownCommand } from './resolve-keydown-command';
@@ -11,6 +13,8 @@ type TUseKeymapParams = {
 
 export function useKeymap({ getContext, onCommand }: TUseKeymapParams) {
   function handleKeydown(event: KeyboardEvent) {
+    if (isKeyboardEventOwnedByUi(event)) return;
+
     const command = resolveKeydownCommand({
       event,
       context: getContext(),

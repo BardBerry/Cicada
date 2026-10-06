@@ -1,27 +1,29 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
 
-export type TAppButtonVariant = 'primary' | 'secondary';
-export type TAppButtonSize = 'standard' | 'icon';
+export type TUiButtonVariant = 'primary' | 'secondary';
+export type TUiButtonSize = 'standard' | 'icon';
 
 type TProps = {
-  variant?: TAppButtonVariant;
-  size?: TAppButtonSize;
+  variant?: TUiButtonVariant;
+  size?: TUiButtonSize;
+  type?: 'button' | 'submit' | 'reset';
   icon?: Component;
 };
 
 const props = withDefaults(defineProps<TProps>(), {
   variant: 'secondary',
   size: 'standard',
+  type: 'button',
   icon: undefined,
 });
 </script>
 
 <template>
   <button
-    type="button"
-    class="app-button"
-    :class="[`app-button--${props.variant}`, `app-button--size-${props.size}`]"
+    :type="props.type"
+    class="ui-button"
+    :class="[`ui-button--${props.variant}`, `ui-button--size-${props.size}`]"
   >
     <component
       :is="props.icon"
@@ -36,7 +38,7 @@ const props = withDefaults(defineProps<TProps>(), {
 </template>
 
 <style scoped>
-.app-button {
+.ui-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -51,28 +53,28 @@ const props = withDefaults(defineProps<TProps>(), {
   white-space: nowrap;
 }
 
-.app-button--primary {
+.ui-button--primary {
   color: var(--app-text-inverse);
-  background: var(--app-button-primary-background, var(--app-accent));
+  background: var(--ui-button-primary-background, var(--app-accent));
 }
 
-.app-button--primary:hover:not(:disabled) {
+.ui-button--primary:hover:not(:disabled) {
   filter: brightness(0.94);
 }
 
-.app-button--secondary {
+.ui-button--secondary {
   color: var(--app-text);
-  background: var(--app-button-secondary-background, var(--app-background));
+  background: var(--ui-button-secondary-background, var(--app-background));
 }
 
-.app-button--secondary:hover:not(:disabled) {
+.ui-button--secondary:hover:not(:disabled) {
   background: var(
-    --app-button-secondary-hover-background,
+    --ui-button-secondary-hover-background,
     var(--app-surface-raised)
   );
 }
 
-.app-button--size-icon {
+.ui-button--size-icon {
   width: var(--control-size-md);
   height: var(--control-size-md);
   padding: var(--space-2);
@@ -82,21 +84,21 @@ const props = withDefaults(defineProps<TProps>(), {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  fill: var(--app-button-icon-fill, none);
-  stroke-width: var(--app-button-icon-stroke-width, 2);
+  fill: var(--ui-button-icon-fill, none);
+  stroke-width: var(--ui-button-icon-stroke-width, 2);
 }
 
-.app-button:focus-visible {
+.ui-button:focus-visible {
   outline: 2px solid var(--app-accent);
   outline-offset: 1px;
 }
 
-.app-button:disabled {
+.ui-button:disabled {
   opacity: 0.45;
 }
 
 @media (max-width: 480px) {
-  .app-button--size-standard {
+  .ui-button--size-standard {
     padding-inline: var(--space-2);
   }
 }
