@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
+import { UI_APPLICATION_KEYBOARD_SCOPE_ATTRS } from '@/shared/ui/ui-keyboard-scope';
+
 import { ETextMutationResultStatus } from './derive-text-mutation-event';
 import { resolveTextMutation } from './resolve-text-mutation';
 import { ETypingEventType, type TTypingEvent } from './typing-event.model';
@@ -68,6 +70,7 @@ function handleKeydown(event: KeyboardEvent) {
     ref="textarea"
     class="typing-surface"
     aria-label="Type a caption"
+    v-bind="UI_APPLICATION_KEYBOARD_SCOPE_ATTRS"
     :value="props.text"
     autocorrect="off"
     autocapitalize="off"

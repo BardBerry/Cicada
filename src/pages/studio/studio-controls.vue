@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CircleIcon, MaximizeIcon, PlayIcon, SquareIcon } from '@lucide/vue';
 
-import AppButton from '@/shared/ui/app-button.vue';
+import UiButton from '@/shared/ui/ui-button.vue';
 
 type TProps = {
   isRecording: boolean;
@@ -21,7 +21,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="studio-controls" role="group" aria-label="Studio controls">
-    <AppButton
+    <UiButton
       class="record"
       :class="{
         'record--recording': props.isRecording,
@@ -38,9 +38,9 @@ const emit = defineEmits<{
         </span>
         <span class="label-measure" aria-hidden="true"> Record </span>
       </span>
-    </AppButton>
+    </UiButton>
 
-    <AppButton
+    <UiButton
       class="replay"
       :icon="props.isReplaying ? SquareIcon : PlayIcon"
       :disabled="props.isRecording || (!props.canReplay && !props.isReplaying)"
@@ -53,20 +53,20 @@ const emit = defineEmits<{
         </span>
         <span class="label-measure" aria-hidden="true"> Replay </span>
       </span>
-    </AppButton>
+    </UiButton>
 
     <span class="divider" aria-hidden="true"></span>
 
-    <AppButton class="zen" :icon="MaximizeIcon" @click="emit('enterZen')">
+    <UiButton class="zen" :icon="MaximizeIcon" @click="emit('enterZen')">
       Zen
-    </AppButton>
+    </UiButton>
   </div>
 </template>
 
 <style scoped>
 .studio-controls {
-  --app-button-secondary-background: transparent;
-  --app-button-secondary-hover-background: var(--app-surface-raised);
+  --ui-button-secondary-background: transparent;
+  --ui-button-secondary-hover-background: var(--app-surface-raised);
 
   display: flex;
   align-items: center;
@@ -79,20 +79,20 @@ const emit = defineEmits<{
 }
 
 .record {
-  --app-button-primary-background: var(--app-live);
-  --app-button-icon-fill: currentColor;
+  --ui-button-primary-background: var(--app-live);
+  --ui-button-icon-fill: currentColor;
 }
 
 .record--recording {
-  --app-button-primary-background: var(--app-recording);
+  --ui-button-primary-background: var(--app-recording);
 }
 
 .replay {
-  --app-button-icon-fill: currentColor;
+  --ui-button-icon-fill: currentColor;
 }
 
 .zen {
-  --app-button-icon-stroke-width: 2.5;
+  --ui-button-icon-stroke-width: 2.5;
 }
 
 .label {
