@@ -43,6 +43,7 @@ For most components, use `AnimatePresence` with the `exit` prop as usual:
 Some Base UI components (e.g. `ContextMenu`, `Popover`) control their own conditional rendering. For exit animations on these:
 
 1. **Hoist their open state** with `useState`:
+
    ```jsx
    const [open, setOpen] = useState(false)
 
@@ -51,6 +52,7 @@ Some Base UI components (e.g. `ContextMenu`, `Popover`) control their own condit
    ```
 
 2. **Add `keepMounted` to `Portal`** and wrap with `AnimatePresence`:
+
    ```jsx
    <AnimatePresence>
      {open && (
@@ -74,7 +76,7 @@ Some Base UI components (e.g. `ContextMenu`, `Popover`) control their own condit
 
 ```jsx
 function App() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   return (
     <ContextMenu.Root open={open} onOpenChange={setOpen}>
@@ -86,9 +88,9 @@ function App() {
               <ContextMenu.Popup
                 render={
                   <motion.div
-                    initial={{ opacity: 0, transform: "scale(0.9)" }}
-                    animate={{ opacity: 1, transform: "scale(1)" }}
-                    exit={{ opacity: 0, transform: "scale(0.9)" }}
+                    initial={{ opacity: 0, transform: 'scale(0.9)' }}
+                    animate={{ opacity: 1, transform: 'scale(1)' }}
+                    exit={{ opacity: 0, transform: 'scale(0.9)' }}
                   />
                 }
               >
@@ -99,7 +101,7 @@ function App() {
         )}
       </AnimatePresence>
     </ContextMenu.Root>
-  )
+  );
 }
 ```
 

@@ -73,7 +73,7 @@ Current examples include:
 ```text
 features/typing/
 features/captions/
-features/projects/
+features/recordings/
 features/workspace/
 ```
 
@@ -107,17 +107,18 @@ The persistence-related feature dependencies are intentionally directional:
 
 ```text
 workspace
-  → projects
+  → recordings
+  → typing
 
-projects
-  → typing recording model
+recordings
+  → typing recording model and pure reduction
 
 typing
-  ↛ projects
+  ↛ recordings
   ↛ workspace
 ```
 
-The projects feature owns project metadata and persistence operations. The workspace feature owns the one recording currently being worked on and coordinates project operations without implementing filesystem behavior. The typing feature remains independent of project membership and persistence workflows.
+The recordings feature owns the app-wide recording catalog, listing metadata, and persistence operations. The workspace feature owns the current temporary or saved recording and coordinates recording operations without implementing filesystem behavior. The typing feature remains independent of saved status and persistence workflows.
 
 ---
 
@@ -288,14 +289,16 @@ For recording persistence, the lifetime owners are separate:
 typing-session store
 → live typing, capture, and replay state
 
-project store
-→ project catalog, recording metadata, persistence operations, and persistence errors
+recording catalog store
+→ saved metadata, persistence operations, errors, and cleanup warnings
 
 recording-workspace store
-→ current draft or saved recording and failed-save attempt state
+→ current temporary or saved recording, generation, and retained save-attempt state
 ```
 
-Navigating between projects must not replace the workspace recording or change its presentation. A draft may exist without belonging to a project.
+Browsing the catalog must not replace Workspace content or change its presentation. Only an explicitly accepted Open installs a saved recording. Free typing and capture require no persisted entity; completed temporary takes live in Workspace until saved or replaced.
+
+Studio derives read-only recording preview from the presence of Workspace content; temporary and saved recordings share preview behavior but have different actions. Capture and replay remain independent activities. New Recording unloads content without deleting a saved catalog entry. An admitted retake starts capture before clearing the previous temporary take, then advances Workspace generation and retains the new capture target synchronously.
 
 ---
 
@@ -343,7 +346,7 @@ recording/replay timing
 → feature behavior
 
 caption layout
-→ presentation/project state
+→ current presentation state
 
 caption theme
 → visual appearance

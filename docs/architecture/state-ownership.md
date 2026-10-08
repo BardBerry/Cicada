@@ -126,10 +126,10 @@ Example:
 typing session
 recording state
 replay state
-last recording
+current recording
 ```
 
-belong in the typing session store because Studio is not their lifetime owner.
+need store lifetime because Studio is not their lifetime owner. The current completed recording belongs to Workspace; capture and replay belong to Typing Session.
 
 A store may compose lower-level composables.
 
@@ -145,9 +145,9 @@ This does not mean recording and replay each need their own stores.
 
 Prefer one meaningful owner over many tiny stores created only for structural symmetry.
 
-### Recording and Project Ownership
+### Recording Ownership
 
-The typing session, project catalog, and recording workspace have different lifetimes and responsibilities:
+The typing session, recording catalog, and recording workspace have different lifetimes and responsibilities:
 
 ```text
 TypingSessionStore:
@@ -155,20 +155,25 @@ TypingSessionStore:
   recording capture
   replay
 
-ProjectStore:
-  project catalog and metadata
-  project and recording persistence operations
+RecordingCatalogStore:
+  saved recording summaries
+  recording persistence operations
   persistence errors and cleanup warnings
 
 RecordingWorkspaceStore:
-  one current draft or saved recording
+  one current temporary or saved recording
+  workspace identity and generation
   failed-save attempt identity
-  unsaved-work replacement guards
+  shared in-flight save guard
 ```
 
-The workspace calls the Project Store for persistence. It does not construct manifests, resolve paths, or duplicate persistence errors. Project navigation does not change workspace state.
+Workspace Actions call the Recording Catalog Store for persistence. Workspace does not construct catalogs, resolve paths, or duplicate persistence errors. Browsing summaries does not change Workspace. Accepted Open installs saved content before any session reset/static preview, with no intervening await.
 
-A failed save is ambiguous because persistence may have completed before the caller observed the failure. Abandoning a save attempt only unlocks the draft so it can be saved elsewhere, discarded, or replaced. It does not roll back storage. The original project may contain no recording, an unreferenced recording file, or a complete valid recording. A future confirmation dialog must explain that possibility, but dialog state and wording do not belong in the workspace store.
+A failed save is ambiguous because persistence may have completed before the caller observed the failure. Workspace retains the exact attempt and immutable performance for retry. In-flight saves block replacement; settled failed attempts can be abandoned by Record or New Recording without confirmation. Abandonment does not roll back storage: the catalog may contain a complete recording, or an unreferenced payload may remain.
+
+Workspace content is either absent, temporary, or saved. Both temporary and saved content are presented as read-only recording previews. Capture/replay activity is not a content state. Record clears a temporary take only after capture start is accepted, as one synchronous admitted workflow. New Recording cancels capture, stops replay, clears content/capture targets, and resets the live session without resetting visual settings or requesting input focus.
+
+The catalog is authoritative for logical membership. Saving creates or verifies an immutable payload before publishing its summary. Catalog writes use an exclusive sibling temporary file, complete writes, close, and replacement rename. This avoids direct truncation but is not a multi-file transaction, fsync durability, or cross-process locking. Operations are serialized by the catalog store within one application runtime. Deletion publishes membership removal before physical cleanup; cleanup failure is a warning, not logical failure. Orphans are not automatically imported.
 
 ---
 
@@ -187,8 +192,8 @@ Pinia
 localStorage / Tauri settings
 → persistent user preferences
 
-future project file
-→ project-specific persistent state
+recording catalog and payload files
+→ explicitly saved recordings
 ```
 
 Do not add persistence merely because state has moved into a store.
@@ -252,7 +257,7 @@ TypingSessionStore:
   session text/captions
   recording
   replay
-  last recording
+   current recording in Workspace
 ```
 
 Do not force these into the same ownership model simply because they belong to the same feature.
@@ -309,7 +314,7 @@ Names should match ownership.
 
 Cicada produces visual content.
 
-Authored output behavior should come from project/application state, not unrelated operating-system preferences.
+Authored output behavior should come from recording/application state, not unrelated operating-system preferences.
 
 For example:
 
@@ -327,11 +332,11 @@ Think of the layers separately:
 OS accessibility preference
 → Cicada chrome may respect it
 
-project caption motion
-→ determined by the project
+recording caption motion
+→ determined by authored presentation settings
 
 Zen / output rendering
-→ renders the project deterministically
+→ renders the performance deterministically
 ```
 
 ---
