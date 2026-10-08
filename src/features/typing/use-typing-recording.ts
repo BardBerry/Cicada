@@ -34,10 +34,16 @@ export function useTypingRecording() {
     return recording;
   }
 
+  function cancelRecording() {
+    recorder = null;
+    isRecording.value = false;
+  }
+
   return {
     isRecording,
     startRecording,
     stopRecording,
+    cancelRecording,
     recordEvent,
   };
 }

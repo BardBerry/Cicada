@@ -5,11 +5,18 @@ import { EStudioStatus } from './studio.model';
 
 type TProps = {
   status: EStudioStatus;
+  recordingLabel: string | null;
 };
 
 const props = defineProps<TProps>();
 
 const label = computed(() => {
+  if (props.recordingLabel) {
+    return props.status === EStudioStatus.Replaying
+      ? `${props.recordingLabel} / Replaying`
+      : props.recordingLabel;
+  }
+
   switch (props.status) {
     case EStudioStatus.Recording:
       return 'Recording';

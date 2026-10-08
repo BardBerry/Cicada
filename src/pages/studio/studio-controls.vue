@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { CircleIcon, MaximizeIcon, PlayIcon, SquareIcon } from '@lucide/vue';
+import {
+  CircleIcon,
+  MaximizeIcon,
+  PlayIcon,
+  PlusIcon,
+  SaveIcon,
+  SquareIcon,
+} from '@lucide/vue';
 
 import UiButton from '@/shared/ui/ui-button.vue';
 
@@ -7,7 +14,12 @@ type TProps = {
   isRecording: boolean;
   isReplaying: boolean;
   canRecord: boolean;
-  canReplay: boolean;
+  isRecordingPreview: boolean;
+  isSavedRecording: boolean;
+  canSave: boolean;
+  canStartNew: boolean;
+  isSaving: boolean;
+  isRetry: boolean;
 };
 
 const props = defineProps<TProps>();
@@ -16,12 +28,40 @@ const emit = defineEmits<{
   toggleRecording: [];
   toggleReplay: [];
   enterZen: [];
+  saveRecording: [];
+  newRecording: [];
 }>();
 </script>
 
 <template>
   <div class="studio-controls" role="group" aria-label="Studio controls">
     <UiButton
+      v-if="props.isRecordingPreview && !props.isSavedRecording"
+      :icon="SaveIcon"
+      :disabled="!props.canSave"
+      @click="emit('saveRecording')"
+    >
+      {{ props.isSaving ? 'Saving...' : props.isRetry ? 'Retry Save' : 'Save' }}
+    </UiButton>
+
+    <UiButton
+      v-if="props.isRecordingPreview"
+      class="replay"
+      :icon="props.isReplaying ? SquareIcon : PlayIcon"
+      :disabled="props.isRecording"
+      :aria-label="props.isReplaying ? 'Stop replay' : 'Replay'"
+      @click="emit('toggleReplay')"
+    >
+      <span class="label">
+        <span class="label-text">
+          {{ props.isReplaying ? 'Stop' : 'Replay' }}
+        </span>
+        <span class="label-measure" aria-hidden="true"> Replay </span>
+      </span>
+    </UiButton>
+
+    <UiButton
+      v-if="!props.isSavedRecording"
       class="record"
       :class="{
         'record--recording': props.isRecording,
@@ -41,18 +81,13 @@ const emit = defineEmits<{
     </UiButton>
 
     <UiButton
-      class="replay"
-      :icon="props.isReplaying ? SquareIcon : PlayIcon"
-      :disabled="props.isRecording || (!props.canReplay && !props.isReplaying)"
-      :aria-label="props.isReplaying ? 'Stop replay' : 'Replay'"
-      @click="emit('toggleReplay')"
+      v-if="props.isSavedRecording"
+      :icon="PlusIcon"
+      :disabled="!props.canStartNew"
+      aria-label="New recording"
+      @click="emit('newRecording')"
     >
-      <span class="label">
-        <span class="label-text">
-          {{ props.isReplaying ? 'Stop' : 'Replay' }}
-        </span>
-        <span class="label-measure" aria-hidden="true"> Replay </span>
-      </span>
+      New
     </UiButton>
 
     <span class="divider" aria-hidden="true"></span>
@@ -69,6 +104,8 @@ const emit = defineEmits<{
   --ui-button-secondary-hover-background: var(--app-surface-raised);
 
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2);

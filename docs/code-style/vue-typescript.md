@@ -150,7 +150,7 @@ Do not convert all functions to arrow functions merely for stylistic consistency
 Use a regular parameter when a function has one simple, unambiguous argument:
 
 ```ts
-function loadProject(projectId: string) {
+function loadRecording(recordingId: string) {
   // ...
 }
 ```
@@ -305,8 +305,7 @@ Example:
 ```ts
 const typingSessionStore = useTypingSessionStore();
 
-const { session, lastRecording, isRecording, isReplaying } =
-  storeToRefs(typingSessionStore);
+const { session, isRecording, isReplaying } = storeToRefs(typingSessionStore);
 ```
 
 Store methods may be destructured directly:

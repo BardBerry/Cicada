@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { reactive, ref } from 'vue';
 
 import { applyTypingSessionEvent } from './apply-typing-session-event';
+import { reduceTypingRecording } from './reduce-typing-recording';
 import { type TTypingEvent } from './typing-event.model';
 import { type TTypingRecording } from './typing-recording.model';
 import { type TTypingSessionState } from './typing-session.model';
@@ -19,6 +20,7 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
     isRecording,
     startRecording: startTypingRecording,
     stopRecording: stopTypingRecording,
+    cancelRecording,
     recordEvent,
   } = useTypingRecording();
 
@@ -53,9 +55,10 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
   function startRecording(): boolean {
     if (isRecording.value || isReplaying.value) return false;
 
-    resetSession();
-
     startTypingRecording();
+    if (!isRecording.value) return false;
+
+    resetSession();
     return isRecording.value;
   }
 
@@ -82,6 +85,16 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
     stopTypingReplay();
   }
 
+  function showRecording(recording: TTypingRecording) {
+    if (isRecording.value) return;
+
+    const preview = reduceTypingRecording(recording);
+    stopReplay();
+    resetSession();
+    session.text = preview.text;
+    session.captions = preview.captions;
+  }
+
   return {
     session,
     sessionRevision,
@@ -89,8 +102,11 @@ export const useTypingSessionStore = defineStore('typing-session', () => {
     isReplaying,
     startRecording,
     stopRecording,
+    cancelRecording,
     startReplay,
     stopReplay,
+    resetSession,
+    showRecording,
     handleLiveTypingEvent,
   };
 });
