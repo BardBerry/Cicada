@@ -2,14 +2,41 @@
 import { PanelsTopLeftIcon, Settings2Icon } from '@lucide/vue';
 import { RouterLink, useRoute } from 'vue-router';
 
+import { EAppCommand } from './commands/app-command.model';
+import { useAppCommandDispatcher } from './commands/app-command-context';
 import { EAppRouteName } from './router/app-route.model';
 
 const route = useRoute();
+const { execute, getAvailability } = useAppCommandDispatcher();
 
 const destinations = [
-  { name: EAppRouteName.Studio, label: 'Studio', icon: PanelsTopLeftIcon },
-  { name: EAppRouteName.Settings, label: 'Settings', icon: Settings2Icon },
+  {
+    name: EAppRouteName.Studio,
+    command: EAppCommand.GoToStudio,
+    label: 'Studio',
+    icon: PanelsTopLeftIcon,
+  },
+  {
+    name: EAppRouteName.Settings,
+    command: EAppCommand.GoToSettings,
+    label: 'Settings',
+    icon: Settings2Icon,
+  },
 ];
+
+function navigate(event: MouseEvent, command: EAppCommand) {
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.shiftKey
+  )
+    return;
+  event.preventDefault();
+  execute(command);
+}
 </script>
 
 <template>
@@ -19,20 +46,25 @@ const destinations = [
       :key="destination.name"
       class="item"
     >
-      <RouterLink
-        :to="{ name: destination.name }"
-        :aria-label="destination.label"
-        class="link"
-        :class="{
-          'link--active': route.name === destination.name,
-        }"
-      >
-        <component
-          :is="destination.icon"
-          class="icon"
-          aria-hidden="true"
-          focusable="false"
-        />
+      <RouterLink v-slot="{ href }" custom :to="{ name: destination.name }">
+        <a
+          :href="href"
+          :aria-label="destination.label"
+          :aria-current="route.name === destination.name ? 'page' : undefined"
+          :aria-disabled="
+            !getAvailability(destination.command).enabled || undefined
+          "
+          class="link"
+          :class="{ 'link--active': route.name === destination.name }"
+          @click="navigate($event, destination.command)"
+        >
+          <component
+            :is="destination.icon"
+            class="icon"
+            aria-hidden="true"
+            focusable="false"
+          />
+        </a>
       </RouterLink>
       <span class="tooltip" aria-hidden="true">
         {{ destination.label }}
@@ -107,8 +139,8 @@ const destinations = [
   pointer-events: none;
 }
 
-.link:hover + .tooltip,
-.link:focus-visible + .tooltip {
+.item:hover .tooltip,
+.item:focus-within .tooltip {
   visibility: visible;
 }
 </style>

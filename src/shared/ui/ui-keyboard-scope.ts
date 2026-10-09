@@ -13,7 +13,10 @@ export const UI_APPLICATION_KEYBOARD_SCOPE_ATTRS = {
   [UI_KEYBOARD_SCOPE_ATTRIBUTE]: EUiKeyboardScope.Application,
 } as const;
 
-export function isKeyboardEventOwnedByUi(event: KeyboardEvent): boolean {
+export function isKeyboardEventOwnedByUi(
+  event: KeyboardEvent,
+  { allowFormControls = false }: { allowFormControls?: boolean } = {},
+): boolean {
   let hasApplicationScope = false;
   let hasFormControl = false;
   let isContentEditable: boolean | undefined;
@@ -48,5 +51,9 @@ export function isKeyboardEventOwnedByUi(event: KeyboardEvent): boolean {
     }
   }
 
-  return !hasApplicationScope && (hasFormControl || isContentEditable === true);
+  return (
+    !allowFormControls &&
+    !hasApplicationScope &&
+    (hasFormControl || isContentEditable === true)
+  );
 }
