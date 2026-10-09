@@ -126,7 +126,7 @@ function focusLiveInput() {
 
 onMounted(() => {
   isMounted = true;
-  detachCommands = appCommands.attachStudioHandler(studioCommands);
+  detachCommands = appCommands.registerOwner(studioCommands);
 });
 
 onBeforeUnmount(() => {

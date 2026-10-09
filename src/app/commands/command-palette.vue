@@ -31,10 +31,35 @@ let previousFocus: HTMLElement | null = null;
 const results = computed(() =>
   resolveCommandResults(props.commands, query.value),
 );
+const visibleCommands = computed(() =>
+  results.value.flatMap((section) => section.commands),
+);
 const hasEnabledResults = computed(() =>
-  results.value.some((group) =>
-    group.commands.some((command) => command.enabled),
-  ),
+  visibleCommands.value.some((command) => command.enabled),
+);
+const activeDescendant = computed(() => {
+  const highlighted = listbox.value?.highlightedElement;
+  return visibleCommands.value.some(
+    (command) => command.enabled && command.id === highlighted?.dataset.command,
+  )
+    ? highlighted?.id
+    : undefined;
+});
+
+watch(
+  visibleCommands,
+  () => {
+    if (!open.value || !hasEnabledResults.value) return;
+    const highlighted = listbox.value?.highlightedElement;
+    // State changes can remove or disable the current target without a search input event.
+    if (
+      !highlighted?.isConnected ||
+      highlighted.hasAttribute('data-disabled')
+    ) {
+      listbox.value?.highlightFirstItem();
+    }
+  },
+  { flush: 'post' },
 );
 
 watch(
@@ -101,25 +126,24 @@ function selectCommand(event: Event, command: TResolvedCommand) {
             aria-autocomplete="list"
             :aria-expanded="open"
             :aria-controls="resultsId"
-            :aria-activedescendant="
-              hasEnabledResults ? listbox?.highlightedElement?.id : undefined
-            "
+            :aria-activedescendant="activeDescendant"
             placeholder="Search commands..."
             autocomplete="off"
           />
         </ListboxFilter>
         <ListboxContent as-child>
           <div :id="resultsId" class="results" aria-label="Commands">
-            <ListboxGroup
-              v-for="group in results"
-              :key="group.id"
+            <component
+              :is="section.label ? ListboxGroup : 'div'"
+              v-for="section in results"
+              :key="section.id"
               class="group"
             >
-              <ListboxGroupLabel class="group-label">{{
-                group.label
+              <ListboxGroupLabel v-if="section.label" class="group-label">{{
+                section.label
               }}</ListboxGroupLabel>
               <ListboxItem
-                v-for="command in group.commands"
+                v-for="command in section.commands"
                 :key="command.id"
                 :value="command.id"
                 :disabled="!command.enabled"
@@ -127,6 +151,7 @@ function selectCommand(event: Event, command: TResolvedCommand) {
                 @select="selectCommand($event, command)"
               >
                 <div
+                  :data-command="command.id"
                   :aria-disabled="!command.enabled"
                   class="item"
                   :class="{ 'item--disabled': !command.enabled }"
@@ -157,7 +182,7 @@ function selectCommand(event: Event, command: TResolvedCommand) {
                   </div>
                 </div>
               </ListboxItem>
-            </ListboxGroup>
+            </component>
             <p v-if="!results.length" class="empty" role="status">
               No matching commands
             </p>

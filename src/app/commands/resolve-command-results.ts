@@ -1,53 +1,78 @@
 import { EAppCommandGroup, type TResolvedCommand } from './app-command.model';
 
-const COMMAND_GROUPS = [
-  { id: EAppCommandGroup.Recording, label: 'Recording' },
-  { id: EAppCommandGroup.Playback, label: 'Playback' },
-  { id: EAppCommandGroup.Navigation, label: 'Navigation' },
-  { id: EAppCommandGroup.App, label: 'App' },
-];
+type TCommandResultSection = {
+  id: EAppCommandGroup | 'search';
+  label: string | null;
+  commands: TResolvedCommand[];
+};
+
+const COMMAND_GROUP_LABELS: Record<EAppCommandGroup, string> = {
+  [EAppCommandGroup.Recording]: 'Recording',
+  [EAppCommandGroup.Playback]: 'Playback',
+  [EAppCommandGroup.Navigation]: 'Navigation',
+  [EAppCommandGroup.App]: 'App',
+};
 
 export function resolveCommandResults(
   commands: readonly TResolvedCommand[],
   query: string,
-) {
+): TCommandResultSection[] {
   const text = query.trim().toLowerCase().replace(/\s+/g, ' ');
   const tokens = text.split(' ');
-  const ranked = commands.flatMap((command) => {
+  const ranked = commands.flatMap((command, definitionOrder) => {
+    if (command.relevance === null) return [];
     const label = command.label.toLowerCase();
     const keywords = (command.keywords ?? []).join(' ').toLowerCase();
-    let relevance = 0;
+    let searchRelevance = 0;
     if (text) {
-      if (label === text) relevance = 4;
-      else if (label.startsWith(text)) relevance = 3;
+      if (label === text) searchRelevance = 4;
+      else if (label.startsWith(text)) searchRelevance = 3;
       else if (
         tokens.every((token) =>
           label.split(' ').some((word) => word.startsWith(token)),
         )
       )
-        relevance = 2;
+        searchRelevance = 2;
       else if (tokens.every((token) => `${label} ${keywords}`.includes(token)))
-        relevance = 1;
+        searchRelevance = 1;
       else return [];
     }
-    return [{ command, relevance }];
-  });
-
-  return COMMAND_GROUPS.flatMap((group) => {
-    const matches = ranked.filter(({ command }) => command.group === group.id);
-    if (!matches.length) return [];
-    matches.sort(
-      (left, right) =>
-        right.relevance - left.relevance ||
-        Number(right.command.enabled) - Number(left.command.enabled) ||
-        right.command.priority - left.command.priority,
-    );
     return [
       {
-        ...group,
-        relevance: matches[0].relevance,
-        commands: matches.map(({ command }) => command),
+        command,
+        relevance: command.relevance,
+        searchRelevance,
+        definitionOrder,
       },
     ];
-  }).sort((left, right) => right.relevance - left.relevance);
+  });
+
+  const sortedCommands = ranked
+    .sort(
+      (left, right) =>
+        right.searchRelevance - left.searchRelevance ||
+        left.relevance - right.relevance ||
+        Number(right.command.enabled) - Number(left.command.enabled) ||
+        left.definitionOrder - right.definitionOrder,
+    )
+    .map(({ command }) => command);
+
+  if (!sortedCommands.length) return [];
+  if (text) return [{ id: 'search', label: null, commands: sortedCommands }];
+
+  const groups = new Map<EAppCommandGroup, TCommandResultSection>();
+  // First occurrence is the strongest command, so insertion order ranks categories.
+  for (const command of sortedCommands) {
+    let group = groups.get(command.group);
+    if (!group) {
+      group = {
+        id: command.group,
+        label: COMMAND_GROUP_LABELS[command.group],
+        commands: [],
+      };
+      groups.set(command.group, group);
+    }
+    group.commands.push(command);
+  }
+  return [...groups.values()];
 }

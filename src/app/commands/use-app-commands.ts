@@ -7,88 +7,139 @@ import { EAppRouteName } from '../router/app-route.model';
 import { useStudioUiStore } from '../use-studio-ui-store';
 import {
   EAppCommand,
+  ECommandRelevance,
   type TCommandAvailability,
-  type TCommandHandler,
+  type TCommandEvaluation,
+  type TCommandOwner,
 } from './app-command.model';
 import type { TAppCommands } from './app-command-context';
-import { isStudioCommand, type TStudioCommand } from './app-command-routing';
+import { GLOBAL_COMMANDS, type TGlobalCommand } from './app-command-routing';
 import { COMMAND_DEFINITIONS } from './command-definitions';
+
+type TCommandRegistration = { owner: TCommandOwner };
 
 export function useAppCommands(): TAppCommands {
   const route = useRoute();
   const router = useRouter();
   const studioUiStore = useStudioUiStore();
   const paletteOpen = ref(false);
-  const studioHandler = shallowRef<TCommandHandler<TStudioCommand> | null>(
-    null,
-  );
-  const isStudioActive = computed(
-    () => route.name === EAppRouteName.Studio && studioHandler.value !== null,
-  );
+  const commandOwners = shallowRef<
+    ReadonlyMap<EAppCommand, TCommandRegistration>
+  >(new Map());
   const keymapContext = computed(() => ({
-    scope: !isStudioActive.value
-      ? null
-      : studioUiStore.isZenMode
-        ? EKeymapScope.StudioZen
-        : EKeymapScope.Studio,
+    scope:
+      route.name !== EAppRouteName.Studio
+        ? null
+        : studioUiStore.isZenMode
+          ? EKeymapScope.StudioZen
+          : EKeymapScope.Studio,
   }));
   const resolvedCommands = computed(() =>
-    COMMAND_DEFINITIONS.map((definition) => ({
-      ...definition,
-      ...getAvailability(definition.id),
-      shortcuts: resolveCommandShortcuts({
-        command: definition.id,
-        context: keymapContext.value,
-      }),
-    })),
+    COMMAND_DEFINITIONS.map((definition) => {
+      const evaluation = evaluate(definition.id);
+      return {
+        ...definition,
+        ...evaluation.availability,
+        relevance: evaluation.relevance,
+        shortcuts: resolveCommandShortcuts({
+          command: definition.id,
+          context: keymapContext.value,
+        }),
+      };
+    }),
   );
 
-  function attachStudioHandler(handler: TCommandHandler<TStudioCommand>) {
-    studioHandler.value = handler;
+  registerOwner({
+    commands: GLOBAL_COMMANDS,
+    evaluate(command: TGlobalCommand): TCommandEvaluation {
+      const isCurrentDestination =
+        (command === EAppCommand.GoToStudio &&
+          route.name === EAppRouteName.Studio) ||
+        (command === EAppCommand.GoToSettings &&
+          route.name === EAppRouteName.Settings);
+      return {
+        availability: { enabled: true },
+        relevance:
+          command === EAppCommand.OpenCommandPalette || isCurrentDestination
+            ? null
+            : ECommandRelevance.Global,
+      };
+    },
+    execute(command: TGlobalCommand): boolean {
+      switch (command) {
+        case EAppCommand.OpenCommandPalette:
+          paletteOpen.value = true;
+          return true;
+        case EAppCommand.GoToStudio:
+          void router.push({ name: EAppRouteName.Studio });
+          return true;
+        case EAppCommand.GoToSettings:
+          void router.push({ name: EAppRouteName.Settings });
+          return true;
+      }
+    },
+  });
+
+  function registerOwner(owner: TCommandOwner) {
+    const commands = new Set(owner.commands);
+    if (commands.size !== owner.commands.length) {
+      throw new Error('A command owner declares duplicate commands');
+    }
+    for (const command of commands) {
+      if (commandOwners.value.has(command)) {
+        throw new Error(`Command already has an owner: ${command}`);
+      }
+    }
+
+    const registration = { owner };
+    const nextOwners = new Map(commandOwners.value);
+    for (const command of commands) nextOwners.set(command, registration);
+    commandOwners.value = nextOwners;
+
     return () => {
-      if (studioHandler.value === handler) studioHandler.value = null;
+      const remainingOwners = new Map(commandOwners.value);
+      for (const command of commands) {
+        if (remainingOwners.get(command) === registration) {
+          remainingOwners.delete(command);
+        }
+      }
+      if (remainingOwners.size !== commandOwners.value.size) {
+        commandOwners.value = remainingOwners;
+      }
     };
   }
 
-  function getAvailability(command: EAppCommand): TCommandAvailability {
-    if (isStudioCommand(command)) {
-      if (!isStudioActive.value || !studioHandler.value) {
-        return { enabled: false, disabledReason: 'Available in Studio' };
+  function evaluate(command: EAppCommand): TCommandEvaluation {
+    return (
+      commandOwners.value.get(command)?.owner.evaluate(command) ?? {
+        availability: {
+          enabled: false,
+          disabledReason: 'Command is not available here',
+        },
+        relevance: null,
       }
-      return studioHandler.value.getAvailability(command);
-    }
-    return { enabled: true };
+    );
+  }
+
+  function getAvailability(command: EAppCommand): TCommandAvailability {
+    return evaluate(command).availability;
   }
 
   function execute(command: EAppCommand): boolean {
     if (!getAvailability(command).enabled) return false;
 
-    if (isStudioCommand(command)) {
-      return studioHandler.value?.execute(command) ?? false;
-    }
-
-    switch (command) {
-      case EAppCommand.OpenCommandPalette:
-        paletteOpen.value = true;
-        return true;
-      case EAppCommand.GoToStudio:
-        void router.push({ name: EAppRouteName.Studio });
-        return true;
-      case EAppCommand.GoToSettings:
-        void router.push({ name: EAppRouteName.Settings });
-        return true;
-    }
+    return commandOwners.value.get(command)?.owner.execute(command) ?? false;
   }
 
   function preparePaletteCommand(command: EAppCommand) {
     if (!getAvailability(command).enabled) return null;
-    const expectedHandler = studioHandler.value;
+    const expectedOwner = commandOwners.value.get(command);
     const expectedRoute = route.fullPath;
 
     // Dismissal is deferred; never execute a selection against a replacement page.
     return () => {
       if (route.fullPath !== expectedRoute) return false;
-      if (isStudioCommand(command) && studioHandler.value !== expectedHandler) {
+      if (commandOwners.value.get(command) !== expectedOwner) {
         return false;
       }
       return execute(command);
@@ -101,7 +152,7 @@ export function useAppCommands(): TAppCommands {
     keymapContext,
     getAvailability,
     execute,
-    attachStudioHandler,
+    registerOwner,
     preparePaletteCommand,
   };
 }

@@ -4,15 +4,15 @@ import type { TKeymapContext } from '../keymap/keymap.model';
 import type {
   EAppCommand,
   TCommandHandler,
+  TCommandOwner,
   TResolvedCommand,
 } from './app-command.model';
-import type { TStudioCommand } from './app-command-routing';
 
 export type TAppCommands = TCommandHandler & {
   paletteOpen: Ref<boolean>;
   resolvedCommands: ComputedRef<readonly TResolvedCommand[]>;
   keymapContext: ComputedRef<TKeymapContext>;
-  attachStudioHandler: (handler: TCommandHandler<TStudioCommand>) => () => void;
+  registerOwner: (owner: TCommandOwner) => () => void;
   preparePaletteCommand: (command: EAppCommand) => (() => boolean) | null;
 };
 

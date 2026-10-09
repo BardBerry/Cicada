@@ -1,9 +1,17 @@
+import { useRoute } from 'vue-router';
+
 import {
   EAppCommand,
+  ECommandRelevance,
   type TCommandAvailability,
-  type TCommandHandler,
+  type TCommandEvaluation,
+  type TCommandOwner,
 } from '@/app/commands/app-command.model';
-import type { TStudioCommand } from '@/app/commands/app-command-routing';
+import {
+  STUDIO_COMMANDS,
+  type TStudioCommand,
+} from '@/app/commands/app-command-routing';
+import { EAppRouteName } from '@/app/router/app-route.model';
 import { useStudioUiStore } from '@/app/use-studio-ui-store';
 import { useRecordingCatalogStore } from '@/features/recordings/use-recording-catalog-store';
 import { useTypingSessionStore } from '@/features/typing/use-typing-session-store';
@@ -21,13 +29,77 @@ type TUseStudioCommandsParams = {
 
 export function useStudioCommands(
   ui: TUseStudioCommandsParams,
-): TCommandHandler<TStudioCommand> {
+): TCommandOwner<TStudioCommand> {
+  const route = useRoute();
   const studioUiStore = useStudioUiStore();
   const typingSessionStore = useTypingSessionStore();
   const workspaceStore = useRecordingWorkspaceStore();
   const catalogStore = useRecordingCatalogStore();
   const workflowStore = useStudioRecordingWorkflowStore();
   const workspaceActions = useRecordingWorkspaceActions();
+
+  function evaluate(command: TStudioCommand): TCommandEvaluation {
+    if (route.name !== EAppRouteName.Studio) {
+      return {
+        availability: { enabled: false, disabledReason: 'Available in Studio' },
+        relevance: null,
+      };
+    }
+    return {
+      availability: getAvailability(command),
+      relevance: getRelevance(command),
+    };
+  }
+
+  function getRelevance(command: TStudioCommand): ECommandRelevance | null {
+    const content = workspaceStore.workspaceRecording;
+    const isRecording = typingSessionStore.isRecording;
+    const isReplaying = typingSessionStore.isReplaying;
+
+    switch (command) {
+      case EAppCommand.StartRecording:
+        if (isRecording || content?.state === EWorkspaceRecordingState.Saved) {
+          return null;
+        }
+        return !content && !isReplaying
+          ? ECommandRelevance.CurrentTask
+          : ECommandRelevance.Local;
+      case EAppCommand.StopRecording:
+        return isRecording ? ECommandRelevance.ActiveOperation : null;
+      case EAppCommand.SaveRecording:
+        if (
+          isRecording ||
+          content?.state !== EWorkspaceRecordingState.Temporary
+        ) {
+          return null;
+        }
+        return isReplaying
+          ? ECommandRelevance.Local
+          : ECommandRelevance.CurrentTask;
+      case EAppCommand.NewRecording:
+        return content ||
+          isRecording ||
+          isReplaying ||
+          typingSessionStore.session.text ||
+          typingSessionStore.session.captions.length
+          ? ECommandRelevance.Local
+          : null;
+      case EAppCommand.StartReplay:
+        if (!content || isRecording || isReplaying) return null;
+        return content.state === EWorkspaceRecordingState.Saved
+          ? ECommandRelevance.CurrentTask
+          : ECommandRelevance.Local;
+      case EAppCommand.StopReplay:
+        return isReplaying ? ECommandRelevance.ActiveOperation : null;
+      case EAppCommand.EnterZenMode:
+        return studioUiStore.isZenMode ? null : ECommandRelevance.Local;
+      case EAppCommand.ExitZenMode:
+        return studioUiStore.isZenMode ? ECommandRelevance.Local : null;
+      case EAppCommand.FocusCaptionInput:
+      case EAppCommand.BlurCaptionInput:
+        return null;
+    }
+  }
 
   function getAvailability(command: TStudioCommand): TCommandAvailability {
     const content = workspaceStore.workspaceRecording;
@@ -187,5 +259,5 @@ export function useStudioCommands(
     }
   }
 
-  return { getAvailability, execute };
+  return { commands: STUDIO_COMMANDS, evaluate, execute };
 }

@@ -22,7 +22,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'Start Recording',
     icon: CircleIcon,
     group: EAppCommandGroup.Recording,
-    priority: 40,
     keywords: ['record', 'retake', 'capture'],
   },
   {
@@ -30,7 +29,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'Stop Recording',
     icon: SquareIcon,
     group: EAppCommandGroup.Recording,
-    priority: 30,
     keywords: ['finish', 'capture'],
   },
   {
@@ -38,7 +36,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'Save Recording',
     icon: SaveIcon,
     group: EAppCommandGroup.Recording,
-    priority: 20,
     keywords: ['retry', 'draft'],
   },
   {
@@ -46,7 +43,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'New Recording',
     icon: PlusIcon,
     group: EAppCommandGroup.Recording,
-    priority: 10,
     keywords: ['clear', 'reset', 'workspace'],
   },
   {
@@ -54,7 +50,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'Replay Recording',
     icon: PlayIcon,
     group: EAppCommandGroup.Playback,
-    priority: 20,
     keywords: ['play', 'restart'],
   },
   {
@@ -62,7 +57,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'Stop Replay',
     icon: SquareIcon,
     group: EAppCommandGroup.Playback,
-    priority: 10,
     keywords: ['playback'],
   },
   {
@@ -70,7 +64,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'Go to Studio',
     icon: PanelsTopLeftIcon,
     group: EAppCommandGroup.Navigation,
-    priority: 20,
     keywords: ['workspace'],
   },
   {
@@ -78,7 +71,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'Go to Settings',
     icon: Settings2Icon,
     group: EAppCommandGroup.Navigation,
-    priority: 10,
     keywords: ['preferences'],
   },
   {
@@ -86,7 +78,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'Enter Zen Mode',
     icon: MaximizeIcon,
     group: EAppCommandGroup.App,
-    priority: 20,
     keywords: ['hide', 'chrome'],
   },
   {
@@ -94,7 +85,6 @@ export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
     label: 'Exit Zen Mode',
     icon: MinimizeIcon,
     group: EAppCommandGroup.App,
-    priority: 10,
     keywords: ['show', 'chrome'],
   },
 ];

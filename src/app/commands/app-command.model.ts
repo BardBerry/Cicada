@@ -29,12 +29,18 @@ export enum EAppCommandGroup {
   App = 'app',
 }
 
+export enum ECommandRelevance {
+  ActiveOperation,
+  CurrentTask,
+  Local,
+  Global,
+}
+
 export type TCommandDefinition = {
   id: EAppCommand;
   label: string;
   icon: Component;
   group: EAppCommandGroup;
-  priority: number;
   keywords?: readonly string[];
 };
 
@@ -42,10 +48,24 @@ export type TCommandAvailability =
   | { enabled: true; disabledReason?: never }
   | { enabled: false; disabledReason: string };
 
+export type TCommandEvaluation = {
+  availability: TCommandAvailability;
+  relevance: ECommandRelevance | null;
+};
+
+export type TCommandOwner<TCommand extends EAppCommand = EAppCommand> = {
+  commands: readonly TCommand[];
+  evaluate(command: TCommand): TCommandEvaluation;
+  execute(command: TCommand): boolean;
+};
+
 export type TCommandHandler<TCommand extends EAppCommand = EAppCommand> = {
   getAvailability(command: TCommand): TCommandAvailability;
   execute(command: TCommand): boolean;
 };
 
 export type TResolvedCommand = TCommandDefinition &
-  TCommandAvailability & { shortcuts: readonly TShortcut[] };
+  TCommandAvailability & {
+    relevance: ECommandRelevance | null;
+    shortcuts: readonly TShortcut[];
+  };
