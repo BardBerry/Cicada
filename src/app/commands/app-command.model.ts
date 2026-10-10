@@ -9,14 +9,17 @@ export enum EAppCommand {
 
   StartRecording = 'recording.start',
   StopRecording = 'recording.stop',
+  ToggleRecording = 'recording.toggle',
   NewRecording = 'recording.new',
   SaveRecording = 'recording.save',
 
   StartReplay = 'replay.start',
   StopReplay = 'replay.stop',
+  ToggleReplay = 'replay.toggle',
 
   EnterZenMode = 'studio.enter-zen',
   ExitZenMode = 'studio.exit-zen',
+  ToggleZenMode = 'studio.toggle-zen',
 
   FocusCaptionInput = 'caption-input.focus',
   BlurCaptionInput = 'caption-input.blur',
@@ -51,6 +54,7 @@ export type TCommandAvailability =
 export type TCommandEvaluation = {
   availability: TCommandAvailability;
   relevance: ECommandRelevance | null;
+  shortcutFallback?: EAppCommand;
 };
 
 export type TCommandOwner<TCommand extends EAppCommand = EAppCommand> = {

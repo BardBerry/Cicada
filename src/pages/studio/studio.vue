@@ -22,6 +22,7 @@ import TypingSurface from '@/features/typing/typing-surface.vue';
 import { useTypingSessionStore } from '@/features/typing/use-typing-session-store';
 import { useRecordingWorkspaceStore } from '@/features/workspace/use-recording-workspace-store';
 import { EWorkspaceRecordingState } from '@/features/workspace/workspace-recording.model';
+import { isKeyboardEventOwnedByUi } from '@/shared/ui/ui-keyboard-scope';
 
 import { EStudioStatus } from './studio.model';
 import StudioControls from './studio-controls.vue';
@@ -125,16 +126,42 @@ function focusLiveInput() {
   });
 }
 
+function handleEscape(event: KeyboardEvent) {
+  if (
+    event.code !== 'Escape' ||
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.repeat ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey ||
+    isKeyboardEventOwnedByUi(event)
+  ) {
+    return;
+  }
+
+  if (isTypingFocused.value) {
+    typingSurface.value?.blur();
+    event.preventDefault();
+  } else if (isZenMode.value) {
+    execute(EAppCommand.ExitZenMode);
+    event.preventDefault();
+  }
+}
+
 onBeforeRouteLeave(() => !isRecording.value);
 
 onMounted(() => {
   isMounted = true;
   detachCommands = appCommands.registerOwner(studioCommands);
+  window.addEventListener('keydown', handleEscape);
 });
 
 onBeforeUnmount(() => {
   isMounted = false;
   detachCommands?.();
+  window.removeEventListener('keydown', handleEscape);
 });
 
 onUnmounted(() => {

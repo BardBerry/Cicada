@@ -196,7 +196,7 @@ For example, a presentation mode that affects both Studio and AppShell may belon
 
 Application commands have registered owners, not one owner per route. Global and Studio owners coexist; additional areas within Studio may contribute their own commands through app/page orchestration without making feature code depend upward on `app/`.
 
-Each command ID has one registered owner at a time. Owners evaluate availability and palette relevance from existing state and execute their own commands. Registration rejects duplicate ownership, cleanup is identity-safe, and dispatch revalidates availability before execution. Internal commands do not require palette definitions. Palette relevance may be absent while execution remains permitted; keyboard scope comes from route and Zen state rather than a command's registration.
+Each command ID has one registered owner at a time. Owners evaluate availability, palette relevance, and optional display-only shortcut fallbacks from existing state and execute their own commands. The dispatcher prefers directly assigned shortcuts over owner-provided fallback hints without reading feature-specific state. Registration rejects duplicate ownership, cleanup is identity-safe, and dispatch revalidates availability before execution. Internal commands do not require palette definitions. Palette relevance may be absent while execution remains permitted; keyboard scope comes from the current route rather than a command's registration. Global bindings remain active on every route, and Studio bindings remain active throughout Studio, including Zen mode.
 
 ---
 

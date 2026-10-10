@@ -7,10 +7,6 @@ import {
   type TCommandEvaluation,
   type TCommandOwner,
 } from '@/app/commands/app-command.model';
-import {
-  STUDIO_COMMANDS,
-  type TStudioCommand,
-} from '@/app/commands/app-command-routing';
 import { EAppRouteName } from '@/app/router/app-route.model';
 import { useStudioUiStore } from '@/app/use-studio-ui-store';
 import { useRecordingCatalogStore } from '@/features/recordings/use-recording-catalog-store';
@@ -20,6 +16,24 @@ import { useRecordingWorkspaceStore } from '@/features/workspace/use-recording-w
 import { EWorkspaceRecordingState } from '@/features/workspace/workspace-recording.model';
 
 import { useStudioRecordingWorkflowStore } from './use-studio-recording-workflow-store';
+
+const STUDIO_COMMANDS = [
+  EAppCommand.StartRecording,
+  EAppCommand.StopRecording,
+  EAppCommand.ToggleRecording,
+  EAppCommand.NewRecording,
+  EAppCommand.SaveRecording,
+  EAppCommand.StartReplay,
+  EAppCommand.StopReplay,
+  EAppCommand.ToggleReplay,
+  EAppCommand.EnterZenMode,
+  EAppCommand.ExitZenMode,
+  EAppCommand.ToggleZenMode,
+  EAppCommand.FocusCaptionInput,
+  EAppCommand.BlurCaptionInput,
+] as const;
+
+type TStudioCommand = (typeof STUDIO_COMMANDS)[number];
 
 type TUseStudioCommandsParams = {
   focusLiveInput: () => void;
@@ -38,6 +52,44 @@ export function useStudioCommands(
   const workflowStore = useStudioRecordingWorkflowStore();
   const workspaceActions = useRecordingWorkspaceActions();
 
+  function resolveOperation(
+    command: TStudioCommand,
+  ): Exclude<
+    TStudioCommand,
+    | EAppCommand.ToggleRecording
+    | EAppCommand.ToggleReplay
+    | EAppCommand.ToggleZenMode
+  > {
+    switch (command) {
+      case EAppCommand.ToggleRecording:
+        return typingSessionStore.isRecording
+          ? EAppCommand.StopRecording
+          : EAppCommand.StartRecording;
+      case EAppCommand.ToggleReplay:
+        return typingSessionStore.isReplaying
+          ? EAppCommand.StopReplay
+          : EAppCommand.StartReplay;
+      case EAppCommand.ToggleZenMode:
+        return studioUiStore.isZenMode
+          ? EAppCommand.ExitZenMode
+          : EAppCommand.EnterZenMode;
+      default:
+        return command;
+    }
+  }
+
+  function getShortcutFallback(
+    command: TStudioCommand,
+  ): EAppCommand | undefined {
+    for (const toggle of [
+      EAppCommand.ToggleRecording,
+      EAppCommand.ToggleReplay,
+      EAppCommand.ToggleZenMode,
+    ] as const) {
+      if (resolveOperation(toggle) === command) return toggle;
+    }
+  }
+
   function evaluate(command: TStudioCommand): TCommandEvaluation {
     if (route.name !== EAppRouteName.Studio) {
       return {
@@ -45,13 +97,17 @@ export function useStudioCommands(
         relevance: null,
       };
     }
+    const operation = resolveOperation(command);
     return {
-      availability: getAvailability(command),
-      relevance: getRelevance(command),
+      availability: getAvailability(operation),
+      relevance: getRelevance(operation),
+      shortcutFallback: getShortcutFallback(command),
     };
   }
 
-  function getRelevance(command: TStudioCommand): ECommandRelevance | null {
+  function getRelevance(
+    command: ReturnType<typeof resolveOperation>,
+  ): ECommandRelevance | null {
     const content = workspaceStore.workspaceRecording;
     const isRecording = typingSessionStore.isRecording;
     const isReplaying = typingSessionStore.isReplaying;
@@ -101,7 +157,9 @@ export function useStudioCommands(
     }
   }
 
-  function getAvailability(command: TStudioCommand): TCommandAvailability {
+  function getAvailability(
+    command: ReturnType<typeof resolveOperation>,
+  ): TCommandAvailability {
     const content = workspaceStore.workspaceRecording;
 
     switch (command) {
@@ -154,6 +212,12 @@ export function useStudioCommands(
         if (typingSessionStore.isRecording) {
           return { enabled: false, disabledReason: 'Finish recording first' };
         }
+        if (typingSessionStore.isReplaying) {
+          return {
+            enabled: false,
+            disabledReason: 'Replay already in progress',
+          };
+        }
         return content
           ? { enabled: true }
           : { enabled: false, disabledReason: 'Record something first' };
@@ -180,7 +244,7 @@ export function useStudioCommands(
 
   // Internal delegate: the application dispatcher checks this owner's availability.
   function execute(command: TStudioCommand): boolean {
-    switch (command) {
+    switch (resolveOperation(command)) {
       case EAppCommand.StartRecording:
         // Capture admission and replacement must remain one synchronous workflow.
         typingSessionStore.stopReplay();

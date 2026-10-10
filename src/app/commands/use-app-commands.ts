@@ -2,9 +2,7 @@ import { computed, ref, shallowRef } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { EKeymapScope } from '../keymap/keymap.model';
-import { resolveCommandShortcuts } from '../keymap/resolve-command-shortcuts';
 import { EAppRouteName } from '../router/app-route.model';
-import { useStudioUiStore } from '../use-studio-ui-store';
 import type {
   EAppCommand,
   TCommandAvailability,
@@ -13,24 +11,19 @@ import type {
 } from './app-command.model';
 import type { TAppCommands } from './app-command-context';
 import { COMMAND_DEFINITIONS } from './command-definitions';
+import { resolveCommandShortcutHints } from './resolve-command-shortcut-hints';
 import { useGlobalCommands } from './use-global-commands';
 
 type TCommandRegistration = { owner: TCommandOwner };
 
 export function useAppCommands(): TAppCommands {
   const route = useRoute();
-  const studioUiStore = useStudioUiStore();
   const paletteOpen = ref(false);
   const commandOwners = shallowRef<
     ReadonlyMap<EAppCommand, TCommandRegistration>
   >(new Map());
   const keymapContext = computed(() => ({
-    scope:
-      route.name !== EAppRouteName.Studio
-        ? null
-        : studioUiStore.isZenMode
-          ? EKeymapScope.StudioZen
-          : EKeymapScope.Studio,
+    scope: route.name === EAppRouteName.Studio ? EKeymapScope.Studio : null,
   }));
   const resolvedCommands = computed(() =>
     COMMAND_DEFINITIONS.map((definition) => {
@@ -39,9 +32,10 @@ export function useAppCommands(): TAppCommands {
         ...definition,
         ...evaluation.availability,
         relevance: evaluation.relevance,
-        shortcuts: resolveCommandShortcuts({
+        shortcuts: resolveCommandShortcutHints({
           command: definition.id,
           context: keymapContext.value,
+          fallbackCommand: evaluation.shortcutFallback,
         }),
       };
     }),
