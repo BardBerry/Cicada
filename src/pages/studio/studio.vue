@@ -9,6 +9,7 @@ import {
   ref,
   useTemplateRef,
 } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
 
 import { EAppCommand } from '@/app/commands/app-command.model';
 import { useAppCommandDispatcher } from '@/app/commands/app-command-context';
@@ -124,6 +125,8 @@ function focusLiveInput() {
   });
 }
 
+onBeforeRouteLeave(() => !isRecording.value);
+
 onMounted(() => {
   isMounted = true;
   detachCommands = appCommands.registerOwner(studioCommands);
@@ -134,7 +137,14 @@ onBeforeUnmount(() => {
   detachCommands?.();
 });
 
-onUnmounted(exitZenMode);
+onUnmounted(() => {
+  if (isReplaying.value) {
+    const recording = workspaceRecording.value?.recording;
+    if (recording) typingSessionStore.showRecording(recording);
+    else typingSessionStore.stopReplay();
+  }
+  exitZenMode();
+});
 </script>
 
 <template>

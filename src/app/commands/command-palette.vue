@@ -10,7 +10,6 @@ import {
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue';
 
 import UiDialog from '@/shared/ui/ui-dialog.vue';
-import UiInput from '@/shared/ui/ui-input.vue';
 
 import { formatShortcut } from '../keymap/resolve-command-shortcuts';
 import type { EAppCommand, TResolvedCommand } from './app-command.model';
@@ -24,10 +23,12 @@ const emit = defineEmits<{
 }>();
 const open = defineModel<boolean>('open', { default: false });
 const query = ref('');
+const isKeyboardNavigation = ref(true);
 const search = useTemplateRef('search');
 const listbox = useTemplateRef('listbox');
 const resultsId = useId();
 let previousFocus: HTMLElement | null = null;
+let lastPointerPosition: { x: number; y: number } | null = null;
 const results = computed(() =>
   resolveCommandResults(props.commands, query.value),
 );
@@ -37,7 +38,7 @@ const visibleCommands = computed(() =>
 const hasEnabledResults = computed(() =>
   visibleCommands.value.some((command) => command.enabled),
 );
-const activeDescendant = computed(() => {
+const activeDescendant = computed((): string | undefined => {
   const highlighted = listbox.value?.highlightedElement;
   return visibleCommands.value.some(
     (command) => command.enabled && command.id === highlighted?.dataset.command,
@@ -67,6 +68,8 @@ watch(
   (value) => {
     if (!value) return;
     query.value = '';
+    isKeyboardNavigation.value = true;
+    lastPointerPosition = null;
     previousFocus =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
@@ -104,90 +107,225 @@ function selectCommand(event: Event, command: TResolvedCommand) {
   event.preventDefault();
   if (command.enabled) emit('select', command.id);
 }
+
+function handlePointerEnter(event: PointerEvent) {
+  lastPointerPosition ??= { x: event.clientX, y: event.clientY };
+}
+
+function handlePointerMove(event: PointerEvent) {
+  const position = { x: event.clientX, y: event.clientY };
+  const previous = lastPointerPosition;
+  lastPointerPosition = position;
+
+  if (previous && (previous.x !== position.x || previous.y !== position.y)) {
+    isKeyboardNavigation.value = false;
+  }
+}
+
+function handleHighlight(
+  payload: { ref: HTMLElement; value: unknown } | undefined,
+) {
+  if (!payload || !isKeyboardNavigation.value) return;
+  const { ref: element, value } = payload;
+  const section = results.value.find(
+    (section) =>
+      section.label &&
+      section.commands.find((command) => command.enabled)?.id === value,
+  );
+  if (!section) return;
+
+  const viewport = element.closest<HTMLElement>('.results');
+  const heading = element
+    .closest('.group')
+    ?.querySelector<HTMLElement>('.group-label');
+  if (!viewport || !heading) return;
+
+  const bounds = viewport.getBoundingClientRect();
+  const style = getComputedStyle(viewport);
+  const top =
+    bounds.top + viewport.clientTop + parseFloat(style.scrollPaddingTop);
+  const bottom =
+    bounds.top +
+    viewport.clientTop +
+    viewport.clientHeight -
+    parseFloat(style.scrollPaddingBottom);
+  const offset = top - heading.getBoundingClientRect().top;
+
+  // Include the heading and disabled leading rows only when the whole range fits.
+  if (offset > 0 && element.getBoundingClientRect().bottom + offset <= bottom) {
+    viewport.scrollTop -= offset;
+  }
+}
+
+function handleTab(event: KeyboardEvent) {
+  if (
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey
+  ) {
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+
+  const commands = visibleCommands.value.filter((command) => command.enabled);
+  if (!commands.length) return;
+
+  const current = listbox.value?.highlightedElement?.dataset.command;
+  const index = commands.findIndex((command) => command.id === current);
+  const nextIndex =
+    index === -1
+      ? event.shiftKey
+        ? commands.length - 1
+        : 0
+      : (index + (event.shiftKey ? -1 : 1) + commands.length) % commands.length;
+  const command = commands[nextIndex];
+  if (!command) return;
+
+  search.value?.focus();
+  listbox.value?.highlightItem(command.id);
+}
 </script>
 
 <template>
   <UiDialog
     v-model:open="open"
     title="Command Palette"
+    position="top"
+    :heading="false"
+    :padded="false"
     @open-focus="handleOpenFocus"
     @close-focus="handleCloseFocus"
   >
     <!-- Pointer exit should not clear the current keyboard target. -->
-    <ListboxRoot ref="listbox" class="command-palette" highlight-on-hover>
-      <div class="command-palette" @pointerleave.capture.self.stop>
-        <ListboxFilter v-model="query" as-child>
-          <UiInput
-            ref="search"
-            v-model="query"
-            type="search"
-            role="combobox"
-            aria-label="Search commands"
-            aria-autocomplete="list"
-            :aria-expanded="open"
-            :aria-controls="resultsId"
-            :aria-activedescendant="activeDescendant"
-            placeholder="Search commands..."
-            autocomplete="off"
-          />
-        </ListboxFilter>
-        <ListboxContent as-child>
-          <div :id="resultsId" class="results" aria-label="Commands">
-            <component
-              :is="section.label ? ListboxGroup : 'div'"
-              v-for="section in results"
-              :key="section.id"
-              class="group"
-            >
-              <ListboxGroupLabel v-if="section.label" class="group-label">{{
-                section.label
-              }}</ListboxGroupLabel>
-              <ListboxItem
-                v-for="command in section.commands"
-                :key="command.id"
-                :value="command.id"
-                :disabled="!command.enabled"
-                as-child
-                @select="selectCommand($event, command)"
-              >
-                <div
-                  :data-command="command.id"
-                  :aria-disabled="!command.enabled"
-                  class="item"
-                  :class="{ 'item--disabled': !command.enabled }"
-                >
-                  <component
-                    :is="command.icon"
-                    class="icon"
-                    aria-hidden="true"
-                  />
-                  <div class="description">
-                    <span class="label">{{ command.label }}</span>
-                    <span v-if="!command.enabled" class="reason">{{
-                      command.disabledReason
-                    }}</span>
-                  </div>
-                  <div
-                    v-if="command.shortcuts.length"
-                    class="shortcuts"
-                    aria-label="Keyboard shortcuts"
-                  >
-                    <kbd
-                      v-for="shortcut in command.shortcuts"
-                      :key="formatShortcut(shortcut)"
-                      class="shortcut"
-                    >
-                      {{ formatShortcut(shortcut) }}
-                    </kbd>
-                  </div>
-                </div>
-              </ListboxItem>
-            </component>
-            <p v-if="!results.length" class="empty" role="status">
-              No matching commands
-            </p>
+    <ListboxRoot
+      ref="listbox"
+      as-child
+      :highlight-on-hover="!isKeyboardNavigation"
+      @highlight="handleHighlight"
+    >
+      <div
+        class="command-palette"
+        @keydown.capture="isKeyboardNavigation = true"
+        @pointerenter.self="handlePointerEnter"
+        @pointermove.capture="handlePointerMove"
+        @pointerleave.capture.stop
+        @keydown.tab="handleTab"
+      >
+        <div class="layout">
+          <div class="search">
+            <ListboxFilter v-model="query" as-child>
+              <input
+                ref="search"
+                v-model="query"
+                class="input"
+                type="search"
+                role="combobox"
+                aria-label="Search commands"
+                aria-autocomplete="list"
+                :aria-expanded="open"
+                :aria-controls="resultsId"
+                :aria-activedescendant="activeDescendant"
+                placeholder="Type a command or search..."
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                :spellcheck="false"
+              />
+            </ListboxFilter>
           </div>
-        </ListboxContent>
+          <ListboxContent as-child>
+            <div
+              :id="resultsId"
+              class="results"
+              :class="{ 'results--empty': !results.length }"
+              aria-label="Commands"
+            >
+              <component
+                :is="section.label ? ListboxGroup : 'div'"
+                v-for="section in results"
+                :key="section.id"
+                class="group"
+              >
+                <ListboxGroupLabel v-if="section.label" class="group-label">{{
+                  section.label
+                }}</ListboxGroupLabel>
+                <ListboxItem
+                  v-for="command in section.commands"
+                  :key="command.id"
+                  :value="command.id"
+                  :disabled="!command.enabled"
+                  as-child
+                  @select="selectCommand($event, command)"
+                >
+                  <div
+                    :data-command="command.id"
+                    :aria-disabled="!command.enabled"
+                    :aria-labelledby="`${resultsId}-${command.id}-label`"
+                    :aria-describedby="
+                      !command.enabled
+                        ? `${resultsId}-${command.id}-reason`
+                        : undefined
+                    "
+                    :title="
+                      !command.enabled ? command.disabledReason : undefined
+                    "
+                    class="item"
+                    :class="{ 'item--disabled': !command.enabled }"
+                    @pointermove.capture="
+                      !command.enabled && $event.stopPropagation()
+                    "
+                  >
+                    <component
+                      :is="command.icon"
+                      class="icon"
+                      aria-hidden="true"
+                    />
+                    <div
+                      class="description"
+                      :class="{ 'description--disabled': !command.enabled }"
+                    >
+                      <span
+                        :id="`${resultsId}-${command.id}-label`"
+                        class="label"
+                        >{{ command.label }}</span
+                      >
+                      <span
+                        v-if="!command.enabled"
+                        class="separator"
+                        aria-hidden="true"
+                      />
+                      <span
+                        v-if="!command.enabled"
+                        :id="`${resultsId}-${command.id}-reason`"
+                        class="reason"
+                        >{{ command.disabledReason }}</span
+                      >
+                    </div>
+                    <div
+                      v-if="command.shortcuts.length"
+                      class="shortcuts"
+                      aria-label="Keyboard shortcuts"
+                    >
+                      <kbd
+                        v-for="shortcut in command.shortcuts"
+                        :key="formatShortcut(shortcut)"
+                        class="shortcut"
+                      >
+                        {{ formatShortcut(shortcut) }}
+                      </kbd>
+                    </div>
+                  </div>
+                </ListboxItem>
+              </component>
+              <p v-if="!results.length" class="empty" role="status">
+                No matching commands
+              </p>
+            </div>
+          </ListboxContent>
+        </div>
       </div>
     </ListboxRoot>
   </UiDialog>
@@ -195,15 +333,51 @@ function selectCommand(event: Event, command: TResolvedCommand) {
 
 <style scoped>
 .command-palette {
-  display: grid;
-  gap: var(--space-3);
+  /* Reserve space for the search field and the dialog border. */
+  --results-max-height: min(
+    420px,
+    max(
+      0px,
+      calc(var(--dialog-available-height) - var(--control-size-md) - 2px)
+    )
+  );
   min-width: 0;
 }
 
+.layout {
+  min-width: 0;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-size-md);
+  padding: var(--space-2) var(--space-4);
+  color: var(--app-text);
+  background: var(--app-background);
+  border: 0;
+  border-bottom: 1px solid var(--app-border);
+  border-radius: 0;
+  outline: none;
+}
+
+.input::-webkit-search-cancel-button {
+  display: none;
+}
+
 .results {
-  max-height: min(420px, 55dvh);
+  min-height: min(180px, var(--results-max-height));
+  max-height: var(--results-max-height);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-padding-block: var(--space-4);
+  padding: var(--space-4);
+}
+
+.results--empty {
+  display: grid;
+  place-items: center;
 }
 
 .group + .group {
@@ -234,8 +408,14 @@ function selectCommand(event: Event, command: TResolvedCommand) {
 }
 
 .item--disabled {
-  color: var(--app-muted);
+  color: color-mix(in srgb, var(--app-muted) 75%, var(--app-background));
   cursor: default;
+}
+
+.item--disabled .shortcut {
+  color: inherit;
+  background: transparent;
+  border-color: transparent;
 }
 
 .icon {
@@ -246,8 +426,24 @@ function selectCommand(event: Event, command: TResolvedCommand) {
 
 .description {
   display: grid;
-  gap: var(--space-1);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-2);
+  flex: 1;
   min-width: 0;
+}
+
+.description--disabled {
+  grid-template-columns: auto auto minmax(0, 1fr);
+}
+
+.separator {
+  position: relative;
+  bottom: 2px;
+  width: 3px;
+  height: 3px;
+  background: currentColor;
+  border-radius: var(--radius-full);
 }
 
 .label {
@@ -255,7 +451,10 @@ function selectCommand(event: Event, command: TResolvedCommand) {
 }
 
 .reason {
+  overflow: hidden;
   font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .shortcuts {
@@ -277,6 +476,10 @@ function selectCommand(event: Event, command: TResolvedCommand) {
 }
 
 .empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
   color: var(--app-muted);
   font-size: var(--font-size-sm);

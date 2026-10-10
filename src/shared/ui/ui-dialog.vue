@@ -9,6 +9,7 @@ import {
   DialogRoot,
   DialogTitle,
   DialogTrigger,
+  VisuallyHidden,
 } from 'reka-ui';
 
 import UiButton from './ui-button.vue';
@@ -19,12 +20,18 @@ defineOptions({ inheritAttrs: false });
 
 type TProps = {
   title: string;
+  heading?: boolean;
+  position?: 'center' | 'top';
+  padded?: boolean;
   description?: string;
   dismissible?: boolean;
   dismissOnOutside?: boolean;
 };
 
 const props = withDefaults(defineProps<TProps>(), {
+  heading: true,
+  position: 'center',
+  padded: true,
   description: undefined,
   dismissible: true,
   dismissOnOutside: true,
@@ -66,6 +73,10 @@ function handleOutside(event: Event) {
       <DialogOverlay class="overlay" :style="layerStyle" />
       <DialogContent
         class="ui-dialog"
+        :class="{
+          'ui-dialog--top': props.position === 'top',
+          'ui-dialog--unpadded': !props.padded,
+        }"
         :style="layerStyle"
         v-bind="{
           ...$attrs,
@@ -77,7 +88,7 @@ function handleOutside(event: Event) {
         @open-auto-focus="emit('openFocus', $event)"
         @close-auto-focus="emit('closeFocus', $event)"
       >
-        <header class="header">
+        <header v-if="props.heading" class="header">
           <div class="heading">
             <DialogTitle class="title">{{ props.title }}</DialogTitle>
             <DialogDescription v-if="props.description" class="description">
@@ -93,6 +104,14 @@ function handleOutside(event: Event) {
             />
           </DialogClose>
         </header>
+        <VisuallyHidden v-else as-child>
+          <div :aria-hidden="false">
+            <DialogTitle>{{ props.title }}</DialogTitle>
+            <DialogDescription v-if="props.description">
+              {{ props.description }}
+            </DialogDescription>
+          </div>
+        </VisuallyHidden>
         <slot :close="close" />
         <footer v-if="$slots.actions" class="actions">
           <slot name="actions" :close="close" />
@@ -110,12 +129,14 @@ function handleOutside(event: Event) {
 }
 
 .ui-dialog {
+  --dialog-available-height: calc(100dvh - 2 * var(--space-4));
+
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: min(560px, calc(100vw - 2 * var(--space-4)));
-  max-height: calc(100dvh - 2 * var(--space-4));
+  max-height: var(--dialog-available-height);
   overflow: auto;
   padding: var(--space-4);
   color: var(--app-text);
@@ -123,6 +144,22 @@ function handleOutside(event: Event) {
   border: 1px solid var(--app-border);
   border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+}
+
+.ui-dialog--top {
+  --dialog-top-offset: clamp(var(--space-4), 20dvh, 200px);
+  --dialog-available-height: calc(
+    100dvh - var(--dialog-top-offset) - var(--space-4)
+  );
+
+  top: var(--dialog-top-offset);
+  transform: translateX(-50%);
+}
+
+.ui-dialog--unpadded {
+  /* Unpadded content owns its scroll viewport. */
+  overflow: hidden;
+  padding: 0;
 }
 
 .header {

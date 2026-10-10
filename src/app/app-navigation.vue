@@ -67,7 +67,10 @@ function navigate(event: MouseEvent, command: EAppCommand) {
         </a>
       </RouterLink>
       <span class="tooltip" aria-hidden="true">
-        {{ destination.label }}
+        {{
+          getAvailability(destination.command).disabledReason ??
+          destination.label
+        }}
       </span>
     </div>
   </nav>

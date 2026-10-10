@@ -202,23 +202,17 @@ Choose persistence based on product semantics.
 
 ---
 
-## Ownership Determines Cleanup
+## Ownership and Activity Policy
 
 Cleanup must follow the lifetime of the actual owner.
 
-Do not stop long-lived work merely because one consumer component unmounted.
+Store ownership does not mean every activity must continue when a consumer leaves. End an activity on page departure only when an explicit product policy requires it; do not reset all store-owned state merely because a component unmounted.
 
-Example:
+Capture and replay mechanisms belong to Typing Session, while Studio owns the departure policy:
 
-If replay belongs to the typing-session store:
-
-```text
-Studio unmounts
-≠
-replay owner disappears
-```
-
-Therefore Studio should not automatically stop replay simply because Studio unmounted.
+- Recording blocks Studio departure. Navigation commands expose the restriction, and a route-leave guard also rejects navigation that bypasses commands. Leaving does not implicitly finish or discard a take.
+- Active replay ends on actual Studio unmount. Restore the current Workspace recording's static preview; if there is no Workspace recording, stop replay without clearing other session state. Cancelled navigation does not stop replay, and returning to Studio does not restart it.
+- Drafts, saved recordings, free typing, appearance settings, in-flight saves, and retained retry attempts survive route departure. Persistence continues under its existing store-owned guards.
 
 Conversely, if a mode only makes sense while Studio exists:
 
@@ -229,13 +223,7 @@ Zen mode
 
 then resetting Zen when Studio unmounts is appropriate.
 
-The correct question is:
-
-> Did the owner disappear?
-
-not:
-
-> Did one consumer disappear?
+Ask whether the resource owner disappeared or an explicit activity policy applies. Neither case implies that unrelated state should be cleared.
 
 ---
 
@@ -280,6 +268,8 @@ whether an input is currently focused
 ```
 
 These should not be promoted into stores unless another consumer genuinely needs them or their lifetime must extend beyond the page.
+
+Command owners use the existing lifetime owners to derive availability and palette relevance rather than copying their state into a generic context store. Multiple owners may coexist within one page; their registrations are detached with the orchestrating components without destroying domain state or cancelling saves.
 
 ---
 

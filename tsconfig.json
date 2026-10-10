@@ -14,18 +14,18 @@
     "noEmit": true,
     "jsx": "preserve",
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["./src/*"]
     },
 
     /* Linting */
     "strict": true,
-    "noFallthroughCasesInSwitch": true,
+    "noFallthroughCasesInSwitch": true
   },
   "vueCompilerOptions": {
     "strictTemplates": true,
     "fallthroughAttributes": true,
-    "dataAttributes": ["data-*"],
+    "dataAttributes": ["data-*"]
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
-  "references": [{ "path": "./tsconfig.node.json" }],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

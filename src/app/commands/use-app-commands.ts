@@ -1,26 +1,24 @@
 import { computed, ref, shallowRef } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import { EKeymapScope } from '../keymap/keymap.model';
 import { resolveCommandShortcuts } from '../keymap/resolve-command-shortcuts';
 import { EAppRouteName } from '../router/app-route.model';
 import { useStudioUiStore } from '../use-studio-ui-store';
-import {
+import type {
   EAppCommand,
-  ECommandRelevance,
-  type TCommandAvailability,
-  type TCommandEvaluation,
-  type TCommandOwner,
+  TCommandAvailability,
+  TCommandEvaluation,
+  TCommandOwner,
 } from './app-command.model';
 import type { TAppCommands } from './app-command-context';
-import { GLOBAL_COMMANDS, type TGlobalCommand } from './app-command-routing';
 import { COMMAND_DEFINITIONS } from './command-definitions';
+import { useGlobalCommands } from './use-global-commands';
 
 type TCommandRegistration = { owner: TCommandOwner };
 
 export function useAppCommands(): TAppCommands {
   const route = useRoute();
-  const router = useRouter();
   const studioUiStore = useStudioUiStore();
   const paletteOpen = ref(false);
   const commandOwners = shallowRef<
@@ -49,36 +47,11 @@ export function useAppCommands(): TAppCommands {
     }),
   );
 
-  registerOwner({
-    commands: GLOBAL_COMMANDS,
-    evaluate(command: TGlobalCommand): TCommandEvaluation {
-      const isCurrentDestination =
-        (command === EAppCommand.GoToStudio &&
-          route.name === EAppRouteName.Studio) ||
-        (command === EAppCommand.GoToSettings &&
-          route.name === EAppRouteName.Settings);
-      return {
-        availability: { enabled: true },
-        relevance:
-          command === EAppCommand.OpenCommandPalette || isCurrentDestination
-            ? null
-            : ECommandRelevance.Global,
-      };
-    },
-    execute(command: TGlobalCommand): boolean {
-      switch (command) {
-        case EAppCommand.OpenCommandPalette:
-          paletteOpen.value = true;
-          return true;
-        case EAppCommand.GoToStudio:
-          void router.push({ name: EAppRouteName.Studio });
-          return true;
-        case EAppCommand.GoToSettings:
-          void router.push({ name: EAppRouteName.Settings });
-          return true;
-      }
-    },
-  });
+  registerOwner(
+    useGlobalCommands(() => {
+      paletteOpen.value = true;
+    }),
+  );
 
   function registerOwner(owner: TCommandOwner) {
     const commands = new Set(owner.commands);
