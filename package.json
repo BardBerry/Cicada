@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "node --run typecheck:vue && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "vue-tsc --noEmit",
+    "typecheck:vue": "vue-tsc --noEmit -p tsconfig.json",
+    "typecheck": "node --run typecheck:vue",
     "check": "deno task format:check && deno task lint && deno task typecheck"
   },
   "dependencies": {

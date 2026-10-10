@@ -1,37 +1,71 @@
-import { EStudioMode } from '@/pages/studio/studio.model';
-
 import { EAppCommand } from '../commands/app-command.model';
-import type { TKeybinding } from './keymap.model';
+import { EKeymapScope, type TKeybinding } from './keymap.model';
 
 export const KEYBINDINGS: TKeybinding[] = [
+  // Global
   {
-    command: EAppCommand.ExitZenMode,
-    studioMode: EStudioMode.Zen,
-    shortcut: {
-      code: 'Escape',
-    },
+    command: EAppCommand.OpenCommandPalette,
+    shortcut: { code: 'KeyK', metaKey: true },
   },
   {
-    command: EAppCommand.BlurCaptionInput,
-    studioMode: EStudioMode.Studio,
-    shortcut: {
-      code: 'Escape',
-    },
+    command: EAppCommand.GoToStudio,
+    shortcut: { code: 'Digit1', metaKey: true },
   },
+  {
+    command: EAppCommand.GoToSettings,
+    shortcut: { code: 'Comma', metaKey: true },
+  },
+
+  // Recording
+  {
+    command: EAppCommand.StartRecording,
+    scope: EKeymapScope.Studio,
+    shortcut: { code: 'KeyR', metaKey: true, shiftKey: true },
+  },
+  {
+    command: EAppCommand.StopRecording,
+    scope: EKeymapScope.Studio,
+    shortcut: { code: 'KeyR', metaKey: true, shiftKey: true },
+  },
+  {
+    command: EAppCommand.SaveRecording,
+    scope: EKeymapScope.Studio,
+    shortcut: { code: 'KeyS', metaKey: true },
+  },
+
+  // Playback
+  {
+    command: EAppCommand.StartReplay,
+    scope: EKeymapScope.Studio,
+    shortcut: { code: 'KeyP', metaKey: true, altKey: true },
+  },
+  {
+    command: EAppCommand.StopReplay,
+    scope: EKeymapScope.Studio,
+    shortcut: { code: 'Period', metaKey: true, altKey: true },
+  },
+
+  // Zen Mode
   {
     command: EAppCommand.EnterZenMode,
-    studioMode: EStudioMode.Studio,
-    shortcut: {
-      code: 'KeyC',
-      ctrlKey: true,
-    },
+    scope: EKeymapScope.Studio,
+    shortcut: { code: 'KeyZ', metaKey: true, altKey: true },
   },
   {
     command: EAppCommand.ExitZenMode,
-    studioMode: EStudioMode.Zen,
-    shortcut: {
-      code: 'KeyC',
-      ctrlKey: true,
-    },
+    scope: EKeymapScope.StudioZen,
+    shortcut: { code: 'KeyZ', metaKey: true, altKey: true },
+  },
+  {
+    command: EAppCommand.ExitZenMode,
+    scope: EKeymapScope.StudioZen,
+    shortcut: { code: 'Escape' },
+  },
+
+  // Input
+  {
+    command: EAppCommand.BlurCaptionInput,
+    scope: EKeymapScope.Studio,
+    shortcut: { code: 'Escape' },
   },
 ];

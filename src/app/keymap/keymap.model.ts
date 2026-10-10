@@ -1,9 +1,12 @@
-import { type EStudioMode } from '@/pages/studio/studio.model';
-
 import { type EAppCommand } from '../commands/app-command.model';
 
+export enum EKeymapScope {
+  Studio = 'studio',
+  StudioZen = 'studio-zen',
+}
+
 export type TKeymapContext = {
-  studioMode: EStudioMode;
+  scope: EKeymapScope | null;
 };
 
 export type TShortcut = {
@@ -16,6 +19,6 @@ export type TShortcut = {
 
 export type TKeybinding = {
   command: EAppCommand;
-  studioMode?: EStudioMode;
+  scope?: EKeymapScope;
   shortcut: TShortcut;
 };

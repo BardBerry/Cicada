@@ -2,9 +2,9 @@ import { onMounted, onUnmounted } from 'vue';
 
 import { isKeyboardEventOwnedByUi } from '@/shared/ui/ui-keyboard-scope';
 
-import type { EAppCommand } from '../commands/app-command.model';
+import { EAppCommand } from '../commands/app-command.model';
 import type { TKeymapContext } from './keymap.model';
-import { resolveKeydownCommand } from './resolve-keydown-command';
+import { resolveShortcutCommand } from './resolve-command-shortcuts';
 
 type TUseKeymapParams = {
   getContext: () => TKeymapContext;
@@ -13,14 +13,23 @@ type TUseKeymapParams = {
 
 export function useKeymap({ getContext, onCommand }: TUseKeymapParams) {
   function handleKeydown(event: KeyboardEvent) {
-    if (isKeyboardEventOwnedByUi(event)) return;
+    if (event.defaultPrevented || event.isComposing || event.repeat) {
+      return;
+    }
 
-    const command = resolveKeydownCommand({
-      event,
+    const command = resolveShortcutCommand({
+      shortcut: event,
       context: getContext(),
     });
 
     if (!command) return;
+
+    if (
+      isKeyboardEventOwnedByUi(event, {
+        allowFormControls: command === EAppCommand.OpenCommandPalette,
+      })
+    )
+      return;
 
     event.preventDefault();
     onCommand(command);

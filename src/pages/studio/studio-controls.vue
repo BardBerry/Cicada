@@ -13,7 +13,9 @@ import UiButton from '@/shared/ui/ui-button.vue';
 type TProps = {
   isRecording: boolean;
   isReplaying: boolean;
-  canRecord: boolean;
+  canToggleRecording: boolean;
+  canToggleReplay: boolean;
+  canEnterZen: boolean;
   isRecordingPreview: boolean;
   isSavedRecording: boolean;
   canSave: boolean;
@@ -48,7 +50,7 @@ const emit = defineEmits<{
       v-if="props.isRecordingPreview"
       class="replay"
       :icon="props.isReplaying ? SquareIcon : PlayIcon"
-      :disabled="props.isRecording"
+      :disabled="!props.canToggleReplay"
       :aria-label="props.isReplaying ? 'Stop replay' : 'Replay'"
       @click="emit('toggleReplay')"
     >
@@ -68,7 +70,7 @@ const emit = defineEmits<{
       }"
       variant="primary"
       :icon="props.isRecording ? SquareIcon : CircleIcon"
-      :disabled="!props.isRecording && !props.canRecord"
+      :disabled="!props.canToggleRecording"
       :aria-label="props.isRecording ? 'Stop recording' : 'Record'"
       @click="emit('toggleRecording')"
     >
@@ -92,7 +94,12 @@ const emit = defineEmits<{
 
     <span class="divider" aria-hidden="true"></span>
 
-    <UiButton class="zen" :icon="MaximizeIcon" @click="emit('enterZen')">
+    <UiButton
+      class="zen"
+      :icon="MaximizeIcon"
+      :disabled="!props.canEnterZen"
+      @click="emit('enterZen')"
+    >
       Zen
     </UiButton>
   </div>

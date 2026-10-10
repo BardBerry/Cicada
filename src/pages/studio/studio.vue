@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { computed, nextTick, onUnmounted, ref, useTemplateRef } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  onUnmounted,
+  ref,
+  useTemplateRef,
+} from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
 
 import { EAppCommand } from '@/app/commands/app-command.model';
-import { useKeymap } from '@/app/keymap/use-keymap';
+import { useAppCommandDispatcher } from '@/app/commands/app-command-context';
 import { useStudioUiStore } from '@/app/use-studio-ui-store';
 import CaptionCanvas from '@/features/captions/caption-canvas.vue';
 import { useCaptionLayoutStore } from '@/features/captions/use-caption-layout-store';
@@ -11,47 +20,40 @@ import { useRecordingCatalogStore } from '@/features/recordings/use-recording-ca
 import type { TTypingEvent } from '@/features/typing/typing-event.model';
 import TypingSurface from '@/features/typing/typing-surface.vue';
 import { useTypingSessionStore } from '@/features/typing/use-typing-session-store';
-import { useRecordingWorkspaceActions } from '@/features/workspace/use-recording-workspace-actions';
 import { useRecordingWorkspaceStore } from '@/features/workspace/use-recording-workspace-store';
 import { EWorkspaceRecordingState } from '@/features/workspace/workspace-recording.model';
 
 import { EStudioStatus } from './studio.model';
 import StudioControls from './studio-controls.vue';
 import StudioStatus from './studio-status.vue';
-import { useStudioRecordingWorkflowStore } from './use-studio-recording-workflow-store';
+import { useStudioCommands } from './use-studio-commands';
 
 const typingSurface = useTemplateRef('typingSurface');
 const isTypingFocused = ref(false);
+let isMounted = false;
+let detachCommands: (() => void) | undefined;
 
+const appCommands = useAppCommandDispatcher();
+const { execute, getAvailability, paletteOpen } = appCommands;
 const studioUiStore = useStudioUiStore();
 const typingSessionStore = useTypingSessionStore();
 const captionLayoutStore = useCaptionLayoutStore();
 const workspaceStore = useRecordingWorkspaceStore();
-const recordingWorkflowStore = useStudioRecordingWorkflowStore();
 const catalogStore = useRecordingCatalogStore();
-const workspaceActions = useRecordingWorkspaceActions();
+const studioCommands = useStudioCommands({
+  focusLiveInput,
+  focusCaptionInput: () => typingSurface.value?.focus(),
+  blurCaptionInput: () => typingSurface.value?.blur(),
+});
 
 const { layout: captionLayout } = storeToRefs(captionLayoutStore);
-const { studioMode, isZenMode } = storeToRefs(studioUiStore);
+const { isZenMode } = storeToRefs(studioUiStore);
 const { session, sessionRevision, isRecording, isReplaying } =
   storeToRefs(typingSessionStore);
 const { workspaceRecording, workspaceGeneration, saveAttempt, isSaveInFlight } =
   storeToRefs(workspaceStore);
 const { errorMessage, warningMessage } = storeToRefs(catalogStore);
-const { captureReplacementTarget } = storeToRefs(recordingWorkflowStore);
-
-const { exitZenMode, enterZenMode } = studioUiStore;
-const {
-  startRecording,
-  stopRecording,
-  cancelRecording,
-  resetSession,
-  startReplay,
-  stopReplay,
-} = typingSessionStore;
-const { stageRecording, clearRecording } = workspaceStore;
-const { retainCaptureReplacementTarget, clearCaptureReplacementTarget } =
-  recordingWorkflowStore;
+const { exitZenMode } = studioUiStore;
 
 const isSavedRecording = computed(
   () => workspaceRecording.value?.state === EWorkspaceRecordingState.Saved,
@@ -59,20 +61,11 @@ const isSavedRecording = computed(
 
 const isRecordingPreview = computed(() => workspaceRecording.value !== null);
 
-const canRecord = computed(
-  () =>
-    !isRecording.value &&
-    !isSavedRecording.value &&
-    !isSaveInFlight.value &&
-    !captureReplacementTarget.value,
+const recordingCommand = computed(() =>
+  isRecording.value ? EAppCommand.StopRecording : EAppCommand.StartRecording,
 );
-
-const canSave = computed(
-  () =>
-    workspaceRecording.value?.state === EWorkspaceRecordingState.Temporary &&
-    !isRecording.value &&
-    !isSaveInFlight.value &&
-    !catalogStore.isBusy,
+const replayCommand = computed(() =>
+  isReplaying.value ? EAppCommand.StopReplay : EAppCommand.StartReplay,
 );
 
 const recordingLabel = computed(() => {
@@ -119,6 +112,8 @@ function focusLiveInput() {
   const expectedGeneration = workspaceGeneration.value;
   void nextTick(() => {
     if (
+      !isMounted ||
+      paletteOpen.value ||
       workspaceGeneration.value !== expectedGeneration ||
       isRecordingPreview.value ||
       isReplaying.value
@@ -130,102 +125,26 @@ function focusLiveInput() {
   });
 }
 
-function executeCommand(command: EAppCommand) {
-  switch (command) {
-    case EAppCommand.StartRecording: {
-      if (!canRecord.value) break;
+onBeforeRouteLeave(() => !isRecording.value);
 
-      // Admit the entire retake before mutating content. A rejected start keeps the take.
-      stopReplay();
-      if (!startRecording()) break;
-
-      workspaceActions.abandonSaveAttempt();
-      clearRecording({
-        expectedRecordingId: workspaceRecording.value?.id ?? null,
-        expectedGeneration: workspaceGeneration.value,
-      });
-      retainCaptureReplacementTarget({
-        expectedRecordingId: null,
-        expectedGeneration: workspaceGeneration.value,
-      });
-
-      focusLiveInput();
-      break;
-    }
-
-    case EAppCommand.StopRecording: {
-      const target = captureReplacementTarget.value;
-
-      try {
-        const recording = stopRecording();
-        if (!recording || !target) break;
-        if (
-          stageRecording({ recording, ...target }) &&
-          workspaceRecording.value
-        ) {
-          typingSessionStore.showRecording(workspaceRecording.value.recording);
-          typingSurface.value?.blur();
-        }
-      } finally {
-        // A failed stop can leave capture active and still need its original target.
-        if (!isRecording.value) clearCaptureReplacementTarget();
-      }
-
-      break;
-    }
-
-    case EAppCommand.NewRecording:
-      if (isSaveInFlight.value) break;
-      stopReplay();
-      cancelRecording();
-      clearCaptureReplacementTarget();
-      workspaceActions.abandonSaveAttempt();
-      clearRecording({
-        expectedRecordingId: workspaceRecording.value?.id ?? null,
-        expectedGeneration: workspaceGeneration.value,
-      });
-      resetSession();
-      break;
-
-    case EAppCommand.SaveRecording:
-      if (canSave.value) void workspaceActions.saveWorkspaceRecording();
-      break;
-
-    case EAppCommand.StartReplay:
-      if (!workspaceRecording.value || isRecording.value) break;
-      typingSurface.value?.blur();
-      startReplay(workspaceRecording.value.recording);
-      break;
-
-    case EAppCommand.StopReplay:
-      stopReplay();
-      break;
-
-    case EAppCommand.EnterZenMode:
-      enterZenMode();
-      if (!isRecordingPreview.value) typingSurface.value?.focus();
-      break;
-
-    case EAppCommand.ExitZenMode:
-      exitZenMode();
-      break;
-
-    case EAppCommand.FocusCaptionInput:
-      if (!isRecordingPreview.value) typingSurface.value?.focus();
-      break;
-
-    case EAppCommand.BlurCaptionInput:
-      typingSurface.value?.blur();
-      break;
-  }
-}
-
-useKeymap({
-  getContext: () => ({ studioMode: studioMode.value }),
-  onCommand: executeCommand,
+onMounted(() => {
+  isMounted = true;
+  detachCommands = appCommands.registerOwner(studioCommands);
 });
 
-onUnmounted(exitZenMode);
+onBeforeUnmount(() => {
+  isMounted = false;
+  detachCommands?.();
+});
+
+onUnmounted(() => {
+  if (isReplaying.value) {
+    const recording = workspaceRecording.value?.recording;
+    if (recording) typingSessionStore.showRecording(recording);
+    else typingSessionStore.stopReplay();
+  }
+  exitZenMode();
+});
 </script>
 
 <template>
@@ -266,26 +185,20 @@ onUnmounted(exitZenMode);
       class="controls"
       :is-recording="isRecording"
       :is-replaying="isReplaying"
-      :can-record="canRecord"
+      :can-toggle-recording="getAvailability(recordingCommand).enabled"
       :is-recording-preview="isRecordingPreview"
       :is-saved-recording="isSavedRecording"
-      :can-save="canSave"
-      :can-start-new="!isSaveInFlight"
+      :can-toggle-replay="getAvailability(replayCommand).enabled"
+      :can-save="getAvailability(EAppCommand.SaveRecording).enabled"
+      :can-start-new="getAvailability(EAppCommand.NewRecording).enabled"
+      :can-enter-zen="getAvailability(EAppCommand.EnterZenMode).enabled"
       :is-saving="isSaveInFlight"
       :is-retry="Boolean(saveAttempt)"
-      @toggle-recording="
-        executeCommand(
-          isRecording ? EAppCommand.StopRecording : EAppCommand.StartRecording,
-        )
-      "
-      @toggle-replay="
-        executeCommand(
-          isReplaying ? EAppCommand.StopReplay : EAppCommand.StartReplay,
-        )
-      "
-      @enter-zen="executeCommand(EAppCommand.EnterZenMode)"
-      @save-recording="executeCommand(EAppCommand.SaveRecording)"
-      @new-recording="executeCommand(EAppCommand.NewRecording)"
+      @toggle-recording="execute(recordingCommand)"
+      @toggle-replay="execute(replayCommand)"
+      @enter-zen="execute(EAppCommand.EnterZenMode)"
+      @save-recording="execute(EAppCommand.SaveRecording)"
+      @new-recording="execute(EAppCommand.NewRecording)"
     />
   </div>
 </template>

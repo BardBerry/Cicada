@@ -194,6 +194,10 @@ Application-level state should only live here when it genuinely affects applicat
 
 For example, a presentation mode that affects both Studio and AppShell may belong at the app level.
 
+Application commands have registered owners, not one owner per route. Global and Studio owners coexist; additional areas within Studio may contribute their own commands through app/page orchestration without making feature code depend upward on `app/`.
+
+Each command ID has one registered owner at a time. Owners evaluate availability and palette relevance from existing state and execute their own commands. Registration rejects duplicate ownership, cleanup is identity-safe, and dispatch revalidates availability before execution. Internal commands do not require palette definitions. Palette relevance may be absent while execution remains permitted; keyboard scope comes from route and Zen state rather than a command's registration.
+
 ---
 
 ## Dependency Direction
@@ -299,6 +303,8 @@ recording-workspace store
 Browsing the catalog must not replace Workspace content or change its presentation. Only an explicitly accepted Open installs a saved recording. Free typing and capture require no persisted entity; completed temporary takes live in Workspace until saved or replaced.
 
 Studio derives read-only recording preview from the presence of Workspace content; temporary and saved recordings share preview behavior but have different actions. Capture and replay remain independent activities. New Recording unloads content without deleting a saved catalog entry. An admitted retake starts capture before clearing the previous temporary take, then advances Workspace generation and retains the new capture target synchronously.
+
+Studio departure is blocked during capture, both by navigation command availability and by a route-leave guard. Capture must be stopped explicitly before leaving. Active replay stops and restores the current recording's static preview on actual Studio unmount, not on a navigation attempt that may be cancelled. Departure exits Zen but preserves Workspace content, free typing, appearance settings, in-flight saves, and retained retry attempts. These lifecycle policies are independent of palette visibility and ranking.
 
 ---
 

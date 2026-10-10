@@ -23,7 +23,8 @@
   },
   "vueCompilerOptions": {
     "strictTemplates": true,
-    "fallthroughAttributes": true
+    "fallthroughAttributes": true,
+    "dataAttributes": ["data-*"]
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
   "references": [{ "path": "./tsconfig.node.json" }]
