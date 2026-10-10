@@ -11,7 +11,7 @@ import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue';
 
 import UiDialog from '@/shared/ui/ui-dialog.vue';
 
-import { formatShortcut } from '../keymap/resolve-command-shortcuts';
+import { formatShortcut } from '../keymap/format-shortcut';
 import type { EAppCommand, TResolvedCommand } from './app-command.model';
 import { resolveCommandResults } from './resolve-command-results';
 
@@ -30,7 +30,15 @@ const resultsId = useId();
 let previousFocus: HTMLElement | null = null;
 let lastPointerPosition: { x: number; y: number } | null = null;
 const results = computed(() =>
-  resolveCommandResults(props.commands, query.value),
+  resolveCommandResults(props.commands, query.value).map((section) => ({
+    ...section,
+    commands: section.commands.map((command) => ({
+      ...command,
+      shortcutDisplays: command.shortcuts.map((shortcut) =>
+        formatShortcut({ shortcut }),
+      ),
+    })),
+  })),
 );
 const visibleCommands = computed(() =>
   results.value.flatMap((section) => section.commands),
@@ -265,9 +273,13 @@ function handleTab(event: KeyboardEvent) {
                     :aria-disabled="!command.enabled"
                     :aria-labelledby="`${resultsId}-${command.id}-label`"
                     :aria-describedby="
-                      !command.enabled
-                        ? `${resultsId}-${command.id}-reason`
-                        : undefined
+                      [
+                        !command.enabled && `${resultsId}-${command.id}-reason`,
+                        command.shortcuts.length &&
+                          `${resultsId}-${command.id}-shortcuts`,
+                      ]
+                        .filter(Boolean)
+                        .join(' ') || undefined
                     "
                     :title="
                       !command.enabled ? command.disabledReason : undefined
@@ -306,16 +318,29 @@ function handleTab(event: KeyboardEvent) {
                     </div>
                     <div
                       v-if="command.shortcuts.length"
+                      :id="`${resultsId}-${command.id}-shortcuts`"
                       class="shortcuts"
-                      aria-label="Keyboard shortcuts"
+                      role="group"
+                      :aria-label="`Keyboard shortcuts: ${command.shortcutDisplays
+                        .map((display) => display.accessibleLabel)
+                        .join(' or ')}`"
                     >
-                      <kbd
-                        v-for="shortcut in command.shortcuts"
-                        :key="formatShortcut(shortcut)"
+                      <span
+                        v-for="display in command.shortcutDisplays"
+                        :key="display.accessibleLabel"
                         class="shortcut"
+                        role="img"
+                        :aria-label="display.accessibleLabel"
+                        :title="display.accessibleLabel"
                       >
-                        {{ formatShortcut(shortcut) }}
-                      </kbd>
+                        <kbd
+                          v-for="(token, index) in display.tokens"
+                          :key="index"
+                          class="keycap"
+                          aria-hidden="true"
+                          >{{ token.text }}</kbd
+                        >
+                      </span>
                     </div>
                   </div>
                 </ListboxItem>
@@ -412,10 +437,8 @@ function handleTab(event: KeyboardEvent) {
   cursor: default;
 }
 
-.item--disabled .shortcut {
+.item--disabled .keycap {
   color: inherit;
-  background: transparent;
-  border-color: transparent;
 }
 
 .icon {
@@ -466,6 +489,17 @@ function handleTab(event: KeyboardEvent) {
 }
 
 .shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 22px;
   padding: 2px var(--space-1);
   color: var(--app-muted);
   border: 1px solid var(--app-border);

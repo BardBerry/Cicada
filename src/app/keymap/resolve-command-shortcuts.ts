@@ -1,25 +1,19 @@
 import type { EAppCommand } from '../commands/app-command.model';
 import { KEYBINDINGS } from './keybindings';
 import type { TKeymapContext, TShortcut } from './keymap.model';
+import { matchesShortcut } from './normalize-shortcut';
+import { type EShortcutPlatform, SHORTCUT_PLATFORM } from './shortcut-platform';
 
 type TResolveShortcutCommandParams = {
   shortcut: TShortcut;
   context: TKeymapContext;
+  platform?: EShortcutPlatform;
 };
-
-function matchesShortcut(left: TShortcut, right: TShortcut) {
-  return (
-    left.code === right.code &&
-    (left.altKey ?? false) === (right.altKey ?? false) &&
-    (left.ctrlKey ?? false) === (right.ctrlKey ?? false) &&
-    (left.metaKey ?? false) === (right.metaKey ?? false) &&
-    (left.shiftKey ?? false) === (right.shiftKey ?? false)
-  );
-}
 
 export function resolveShortcutCommand({
   shortcut,
   context,
+  platform = SHORTCUT_PLATFORM,
 }: TResolveShortcutCommandParams): EAppCommand | null {
   const contextualBinding =
     context.scope === null
@@ -27,14 +21,18 @@ export function resolveShortcutCommand({
       : KEYBINDINGS.find(
           (binding) =>
             binding.scope === context.scope &&
-            matchesShortcut(shortcut, binding.shortcut),
+            matchesShortcut({
+              left: shortcut,
+              right: binding.shortcut,
+              platform,
+            }),
         );
   const binding =
     contextualBinding ??
     KEYBINDINGS.find(
       (binding) =>
         binding.scope === undefined &&
-        matchesShortcut(shortcut, binding.shortcut),
+        matchesShortcut({ left: shortcut, right: binding.shortcut, platform }),
     );
   return binding?.command ?? null;
 }
@@ -42,42 +40,30 @@ export function resolveShortcutCommand({
 export function resolveCommandShortcuts({
   command,
   context,
+  platform = SHORTCUT_PLATFORM,
 }: {
   command: EAppCommand;
   context: TKeymapContext;
+  platform?: EShortcutPlatform;
 }): TShortcut[] {
   const shortcuts: TShortcut[] = [];
   for (const binding of KEYBINDINGS) {
     if (binding.command !== command) continue;
     if (
-      resolveShortcutCommand({ shortcut: binding.shortcut, context }) !==
-      command
+      resolveShortcutCommand({
+        shortcut: binding.shortcut,
+        context,
+        platform,
+      }) !== command
     )
       continue;
     if (
-      shortcuts.some((shortcut) => matchesShortcut(shortcut, binding.shortcut))
+      shortcuts.some((shortcut) =>
+        matchesShortcut({ left: shortcut, right: binding.shortcut, platform }),
+      )
     )
       continue;
     shortcuts.push(binding.shortcut);
   }
   return shortcuts;
-}
-
-export function formatShortcut(shortcut: TShortcut): string {
-  const key = shortcut.code.startsWith('Key')
-    ? shortcut.code.slice(3)
-    : shortcut.code.startsWith('Digit')
-      ? shortcut.code.slice(5)
-      : shortcut.code === 'Escape'
-        ? 'Esc'
-        : shortcut.code;
-  return [
-    shortcut.ctrlKey && 'Ctrl',
-    shortcut.altKey && 'Alt',
-    shortcut.shiftKey && 'Shift',
-    shortcut.metaKey && 'Cmd',
-    key,
-  ]
-    .filter(Boolean)
-    .join('+');
 }

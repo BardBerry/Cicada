@@ -5,67 +5,40 @@ export const KEYBINDINGS: TKeybinding[] = [
   // Global
   {
     command: EAppCommand.OpenCommandPalette,
-    shortcut: { code: 'KeyK', metaKey: true },
+    shortcut: { code: 'KeyK', modKey: true },
   },
   {
     command: EAppCommand.GoToStudio,
-    shortcut: { code: 'Digit1', metaKey: true },
+    shortcut: { code: 'Digit1', modKey: true },
   },
   {
     command: EAppCommand.GoToSettings,
-    shortcut: { code: 'Comma', metaKey: true },
+    shortcut: { code: 'Comma', modKey: true },
   },
 
   // Recording
   {
-    command: EAppCommand.StartRecording,
+    command: EAppCommand.ToggleRecording,
     scope: EKeymapScope.Studio,
-    shortcut: { code: 'KeyR', metaKey: true, shiftKey: true },
-  },
-  {
-    command: EAppCommand.StopRecording,
-    scope: EKeymapScope.Studio,
-    shortcut: { code: 'KeyR', metaKey: true, shiftKey: true },
+    shortcut: { code: 'KeyR', modKey: true, shiftKey: true },
   },
   {
     command: EAppCommand.SaveRecording,
     scope: EKeymapScope.Studio,
-    shortcut: { code: 'KeyS', metaKey: true },
+    shortcut: { code: 'KeyS', modKey: true },
   },
 
   // Playback
   {
-    command: EAppCommand.StartReplay,
+    command: EAppCommand.ToggleReplay,
     scope: EKeymapScope.Studio,
-    shortcut: { code: 'KeyP', metaKey: true, altKey: true },
-  },
-  {
-    command: EAppCommand.StopReplay,
-    scope: EKeymapScope.Studio,
-    shortcut: { code: 'Period', metaKey: true, altKey: true },
+    shortcut: { code: 'KeyP', modKey: true, altKey: true },
   },
 
   // Zen Mode
   {
-    command: EAppCommand.EnterZenMode,
+    command: EAppCommand.ToggleZenMode,
     scope: EKeymapScope.Studio,
-    shortcut: { code: 'KeyZ', metaKey: true, altKey: true },
-  },
-  {
-    command: EAppCommand.ExitZenMode,
-    scope: EKeymapScope.StudioZen,
-    shortcut: { code: 'KeyZ', metaKey: true, altKey: true },
-  },
-  {
-    command: EAppCommand.ExitZenMode,
-    scope: EKeymapScope.StudioZen,
-    shortcut: { code: 'Escape' },
-  },
-
-  // Input
-  {
-    command: EAppCommand.BlurCaptionInput,
-    scope: EKeymapScope.Studio,
-    shortcut: { code: 'Escape' },
+    shortcut: { code: 'KeyZ', modKey: true, altKey: true },
   },
 ];
