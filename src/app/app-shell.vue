@@ -12,7 +12,7 @@ import { useKeymap } from './keymap/use-keymap';
 import { useStudioUiStore } from './use-studio-ui-store';
 
 const studioUiStore = useStudioUiStore();
-const { isZenMode } = storeToRefs(studioUiStore);
+const { isChromaMode } = storeToRefs(studioUiStore);
 const commands = useAppCommands();
 const { paletteOpen, resolvedCommands } = commands;
 let pendingCommand: (() => boolean) | null = null;
@@ -42,9 +42,9 @@ function handlePaletteCloseFocus(event: Event) {
 
 <template>
   <div class="app-shell">
-    <div v-if="!isZenMode" class="brand">Cicada</div>
+    <div v-if="!isChromaMode" class="brand">Cicada</div>
 
-    <AppNavigation v-if="!isZenMode" class="navigation" />
+    <AppNavigation v-if="!isChromaMode" class="navigation" />
 
     <main class="main">
       <RouterView />

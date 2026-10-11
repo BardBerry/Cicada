@@ -48,13 +48,13 @@ const studioCommands = useStudioCommands({
 });
 
 const { layout: captionLayout } = storeToRefs(captionLayoutStore);
-const { isZenMode } = storeToRefs(studioUiStore);
+const { isChromaMode } = storeToRefs(studioUiStore);
 const { session, sessionRevision, isRecording, isReplaying } =
   storeToRefs(typingSessionStore);
 const { workspaceRecording, workspaceGeneration, saveAttempt, isSaveInFlight } =
   storeToRefs(workspaceStore);
 const { errorMessage, warningMessage } = storeToRefs(catalogStore);
-const { exitZenMode } = studioUiStore;
+const { exitChromaMode } = studioUiStore;
 
 const isSavedRecording = computed(
   () => workspaceRecording.value?.state === EWorkspaceRecordingState.Saved,
@@ -85,7 +85,7 @@ const isSessionEmpty = computed(
 
 const showTypingPrompt = computed(
   () =>
-    !isZenMode.value &&
+    !isChromaMode.value &&
     !isRecordingPreview.value &&
     !isTypingFocused.value &&
     !isReplaying.value &&
@@ -144,8 +144,8 @@ function handleEscape(event: KeyboardEvent) {
   if (isTypingFocused.value) {
     typingSurface.value?.blur();
     event.preventDefault();
-  } else if (isZenMode.value) {
-    execute(EAppCommand.ExitZenMode);
+  } else if (isChromaMode.value) {
+    execute(EAppCommand.ExitChromaMode);
     event.preventDefault();
   }
 }
@@ -170,12 +170,12 @@ onUnmounted(() => {
     if (recording) typingSessionStore.showRecording(recording);
     else typingSessionStore.stopReplay();
   }
-  exitZenMode();
+  exitChromaMode();
 });
 </script>
 
 <template>
-  <div class="studio" :class="{ 'studio--zen': isZenMode }">
+  <div class="studio" :class="{ 'studio--chroma': isChromaMode }">
     <CaptionCanvas
       :key="sessionRevision"
       :committed-captions="session.captions"
@@ -195,20 +195,20 @@ onUnmounted(() => {
       Click anywhere to type
     </div>
     <StudioStatus
-      v-if="!isZenMode"
+      v-if="!isChromaMode"
       class="status"
       :status="studioStatus"
       :recording-label="recordingLabel"
     />
     <p
-      v-if="!isZenMode && (errorMessage || warningMessage)"
+      v-if="!isChromaMode && (errorMessage || warningMessage)"
       class="message"
       role="alert"
     >
       {{ errorMessage || warningMessage }}
     </p>
     <StudioControls
-      v-if="!isZenMode"
+      v-if="!isChromaMode"
       class="controls"
       :is-recording="isRecording"
       :is-replaying="isReplaying"
@@ -217,15 +217,18 @@ onUnmounted(() => {
       :is-saved-recording="isSavedRecording"
       :can-toggle-replay="getAvailability(replayCommand).enabled"
       :can-save="getAvailability(EAppCommand.SaveRecording).enabled"
-      :can-start-new="getAvailability(EAppCommand.NewRecording).enabled"
-      :can-enter-zen="getAvailability(EAppCommand.EnterZenMode).enabled"
+      :can-clear-session="getAvailability(EAppCommand.ClearSession).enabled"
+      :can-discard-draft="getAvailability(EAppCommand.DiscardDraft).enabled"
+      :can-enter-chroma="getAvailability(EAppCommand.EnterChromaMode).enabled"
       :is-saving="isSaveInFlight"
       :is-retry="Boolean(saveAttempt)"
       @toggle-recording="execute(recordingCommand)"
       @toggle-replay="execute(replayCommand)"
-      @enter-zen="execute(EAppCommand.EnterZenMode)"
+      @enter-chroma="execute(EAppCommand.EnterChromaMode)"
       @save-recording="execute(EAppCommand.SaveRecording)"
-      @new-recording="execute(EAppCommand.NewRecording)"
+      @clear-session="execute(EAppCommand.ClearSession)"
+      @discard-draft="execute(EAppCommand.DiscardDraft)"
+      @close-recording="execute(EAppCommand.NewSession)"
     />
   </div>
 </template>
@@ -247,8 +250,8 @@ onUnmounted(() => {
   background-size: 18px 18px;
 }
 
-.studio--zen {
-  background: var(--app-zen-chroma-color);
+.studio--chroma {
+  background: var(--app-chroma-color);
 }
 
 .typing-prompt {

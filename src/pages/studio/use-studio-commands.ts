@@ -21,14 +21,17 @@ const STUDIO_COMMANDS = [
   EAppCommand.StartRecording,
   EAppCommand.StopRecording,
   EAppCommand.ToggleRecording,
-  EAppCommand.NewRecording,
+  EAppCommand.RetakeRecording,
+  EAppCommand.ClearSession,
+  EAppCommand.DiscardDraft,
+  EAppCommand.NewSession,
   EAppCommand.SaveRecording,
   EAppCommand.StartReplay,
   EAppCommand.StopReplay,
   EAppCommand.ToggleReplay,
-  EAppCommand.EnterZenMode,
-  EAppCommand.ExitZenMode,
-  EAppCommand.ToggleZenMode,
+  EAppCommand.EnterChromaMode,
+  EAppCommand.ExitChromaMode,
+  EAppCommand.ToggleChromaMode,
   EAppCommand.FocusCaptionInput,
   EAppCommand.BlurCaptionInput,
 ] as const;
@@ -58,7 +61,7 @@ export function useStudioCommands(
     TStudioCommand,
     | EAppCommand.ToggleRecording
     | EAppCommand.ToggleReplay
-    | EAppCommand.ToggleZenMode
+    | EAppCommand.ToggleChromaMode
   > {
     switch (command) {
       case EAppCommand.ToggleRecording:
@@ -69,10 +72,10 @@ export function useStudioCommands(
         return typingSessionStore.isReplaying
           ? EAppCommand.StopReplay
           : EAppCommand.StartReplay;
-      case EAppCommand.ToggleZenMode:
-        return studioUiStore.isZenMode
-          ? EAppCommand.ExitZenMode
-          : EAppCommand.EnterZenMode;
+      case EAppCommand.ToggleChromaMode:
+        return studioUiStore.isChromaMode
+          ? EAppCommand.ExitChromaMode
+          : EAppCommand.EnterChromaMode;
       default:
         return command;
     }
@@ -84,7 +87,7 @@ export function useStudioCommands(
     for (const toggle of [
       EAppCommand.ToggleRecording,
       EAppCommand.ToggleReplay,
-      EAppCommand.ToggleZenMode,
+      EAppCommand.ToggleChromaMode,
     ] as const) {
       if (resolveOperation(toggle) === command) return toggle;
     }
@@ -99,6 +102,12 @@ export function useStudioCommands(
     }
     const operation = resolveOperation(command);
     return {
+      label:
+        operation === EAppCommand.StartReplay &&
+        workspaceStore.workspaceRecording?.state ===
+          EWorkspaceRecordingState.Temporary
+          ? 'Replay Draft'
+          : undefined,
       availability: getAvailability(operation),
       relevance: getRelevance(operation),
       shortcutFallback: getShortcutFallback(command),
@@ -114,14 +123,24 @@ export function useStudioCommands(
 
     switch (command) {
       case EAppCommand.StartRecording:
-        if (isRecording || content?.state === EWorkspaceRecordingState.Saved) {
+        if (
+          isRecording ||
+          content?.state === EWorkspaceRecordingState.Saved ||
+          content?.state === EWorkspaceRecordingState.Temporary
+        ) {
           return null;
         }
         return !content && !isReplaying
-          ? ECommandRelevance.CurrentTask
-          : ECommandRelevance.Local;
+          ? ECommandRelevance.PrimaryAction
+          : ECommandRelevance.Contextual;
       case EAppCommand.StopRecording:
         return isRecording ? ECommandRelevance.ActiveOperation : null;
+      case EAppCommand.RetakeRecording:
+        if (content?.state === EWorkspaceRecordingState.Saved) return null;
+        if (isRecording) return ECommandRelevance.ActiveOperation;
+        return content?.state === EWorkspaceRecordingState.Temporary
+          ? ECommandRelevance.Contextual
+          : null;
       case EAppCommand.SaveRecording:
         if (
           isRecording ||
@@ -130,27 +149,35 @@ export function useStudioCommands(
           return null;
         }
         return isReplaying
-          ? ECommandRelevance.Local
-          : ECommandRelevance.CurrentTask;
-      case EAppCommand.NewRecording:
-        return content ||
-          isRecording ||
-          isReplaying ||
-          typingSessionStore.session.text ||
-          typingSessionStore.session.captions.length
-          ? ECommandRelevance.Local
+          ? ECommandRelevance.Contextual
+          : ECommandRelevance.PrimaryAction;
+      case EAppCommand.ClearSession:
+        return !content &&
+          !isRecording &&
+          !isReplaying &&
+          (typingSessionStore.session.text ||
+            typingSessionStore.session.captions.length)
+          ? ECommandRelevance.Contextual
+          : null;
+      case EAppCommand.DiscardDraft:
+        return content?.state === EWorkspaceRecordingState.Temporary
+          ? ECommandRelevance.Contextual
+          : null;
+      case EAppCommand.NewSession:
+        return content?.state === EWorkspaceRecordingState.Saved
+          ? ECommandRelevance.Contextual
           : null;
       case EAppCommand.StartReplay:
         if (!content || isRecording || isReplaying) return null;
         return content.state === EWorkspaceRecordingState.Saved
-          ? ECommandRelevance.CurrentTask
-          : ECommandRelevance.Local;
+          ? ECommandRelevance.PrimaryAction
+          : ECommandRelevance.Contextual;
       case EAppCommand.StopReplay:
         return isReplaying ? ECommandRelevance.ActiveOperation : null;
-      case EAppCommand.EnterZenMode:
-        return studioUiStore.isZenMode ? null : ECommandRelevance.Local;
-      case EAppCommand.ExitZenMode:
-        return studioUiStore.isZenMode ? ECommandRelevance.Local : null;
+      case EAppCommand.EnterChromaMode:
+        return studioUiStore.isChromaMode ? null : ECommandRelevance.Contextual;
+      case EAppCommand.ExitChromaMode:
+        return studioUiStore.isChromaMode ? ECommandRelevance.Contextual : null;
       case EAppCommand.FocusCaptionInput:
       case EAppCommand.BlurCaptionInput:
         return null;
@@ -167,10 +194,16 @@ export function useStudioCommands(
         if (typingSessionStore.isRecording) {
           return { enabled: false, disabledReason: 'Recording in progress' };
         }
+        if (content?.state === EWorkspaceRecordingState.Temporary) {
+          return {
+            enabled: false,
+            disabledReason: 'Save or discard the draft first',
+          };
+        }
         if (content?.state === EWorkspaceRecordingState.Saved) {
           return {
             enabled: false,
-            disabledReason: 'Start a new recording first',
+            disabledReason: 'Close the saved recording first',
           };
         }
         if (workspaceStore.isSaveInFlight) {
@@ -184,6 +217,37 @@ export function useStudioCommands(
         return typingSessionStore.isRecording
           ? { enabled: true }
           : { enabled: false, disabledReason: 'No recording in progress' };
+      case EAppCommand.RetakeRecording: {
+        if (content?.state === EWorkspaceRecordingState.Saved) {
+          return {
+            enabled: false,
+            disabledReason: 'Saved recordings cannot be retaken',
+          };
+        }
+        if (workspaceStore.isSaveInFlight) {
+          return { enabled: false, disabledReason: 'Save in progress' };
+        }
+        const target = workflowStore.captureReplacementTarget;
+        if (typingSessionStore.isRecording) {
+          const hasValidCaptureTarget =
+            !content &&
+            target?.expectedRecordingId === null &&
+            target.expectedGeneration === workspaceStore.workspaceGeneration;
+
+          return hasValidCaptureTarget
+            ? { enabled: true }
+            : {
+                enabled: false,
+                disabledReason: 'Capture target is no longer current',
+              };
+        }
+        if (target) {
+          return { enabled: false, disabledReason: 'Recording is finishing' };
+        }
+        return content?.state === EWorkspaceRecordingState.Temporary
+          ? { enabled: true }
+          : { enabled: false, disabledReason: 'No recording to retake' };
+      }
       case EAppCommand.SaveRecording:
         if (typingSessionStore.isRecording) {
           return { enabled: false, disabledReason: 'Finish recording first' };
@@ -204,7 +268,42 @@ export function useStudioCommands(
           };
         }
         return { enabled: true };
-      case EAppCommand.NewRecording:
+      case EAppCommand.ClearSession:
+        if (
+          content ||
+          typingSessionStore.isRecording ||
+          typingSessionStore.isReplaying
+        ) {
+          return {
+            enabled: false,
+            disabledReason: 'Only available for free typing',
+          };
+        }
+        if (
+          !typingSessionStore.session.text &&
+          !typingSessionStore.session.captions.length
+        ) {
+          return { enabled: false, disabledReason: 'Session is empty' };
+        }
+        return workspaceStore.isSaveInFlight
+          ? { enabled: false, disabledReason: 'Save in progress' }
+          : { enabled: true };
+      case EAppCommand.DiscardDraft:
+      case EAppCommand.NewSession:
+        if (
+          content?.state !==
+          (command === EAppCommand.DiscardDraft
+            ? EWorkspaceRecordingState.Temporary
+            : EWorkspaceRecordingState.Saved)
+        ) {
+          return {
+            enabled: false,
+            disabledReason:
+              command === EAppCommand.DiscardDraft
+                ? 'No unsaved draft'
+                : 'No saved recording loaded',
+          };
+        }
         return workspaceStore.isSaveInFlight
           ? { enabled: false, disabledReason: 'Save in progress' }
           : { enabled: true };
@@ -225,14 +324,14 @@ export function useStudioCommands(
         return typingSessionStore.isReplaying
           ? { enabled: true }
           : { enabled: false, disabledReason: 'No replay in progress' };
-      case EAppCommand.EnterZenMode:
-        return studioUiStore.isZenMode
-          ? { enabled: false, disabledReason: 'Already in Zen mode' }
+      case EAppCommand.EnterChromaMode:
+        return studioUiStore.isChromaMode
+          ? { enabled: false, disabledReason: 'Already in Chroma mode' }
           : { enabled: true };
-      case EAppCommand.ExitZenMode:
-        return studioUiStore.isZenMode
+      case EAppCommand.ExitChromaMode:
+        return studioUiStore.isChromaMode
           ? { enabled: true }
-          : { enabled: false, disabledReason: 'Not in Zen mode' };
+          : { enabled: false, disabledReason: 'Not in Chroma mode' };
       case EAppCommand.FocusCaptionInput:
         return content || typingSessionStore.isReplaying
           ? { enabled: false, disabledReason: 'Recording preview is read-only' }
@@ -242,24 +341,65 @@ export function useStudioCommands(
     }
   }
 
+  function startCapture(): boolean {
+    const expectedRecordingId = workspaceStore.workspaceRecording?.id ?? null;
+    let expectedGeneration = workspaceStore.workspaceGeneration;
+    const saveAttempt = workspaceStore.saveAttempt;
+    let admitted = false;
+
+    // Admission and guarded replacement stay synchronous; never clear a newer workspace.
+    typingSessionStore.stopReplay();
+    try {
+      if (!typingSessionStore.startRecording()) return false;
+      if (
+        workspaceStore.workspaceGeneration !== expectedGeneration ||
+        (workspaceStore.workspaceRecording?.id ?? null) !==
+          expectedRecordingId ||
+        !workspaceActions.abandonSaveAttempt()
+      ) {
+        return false;
+      }
+      // Abandoning a retained retry advances the generation exactly once.
+      if (saveAttempt) expectedGeneration += 1;
+      if (
+        !workspaceStore.clearRecording({
+          expectedRecordingId,
+          expectedGeneration,
+        })
+      ) {
+        return false;
+      }
+      admitted = workflowStore.retainCaptureReplacementTarget({
+        expectedRecordingId: null,
+        expectedGeneration: expectedGeneration + 1,
+      });
+      if (!admitted) return false;
+    } finally {
+      if (!admitted) {
+        typingSessionStore.cancelRecording();
+
+        const recording = workspaceStore.workspaceRecording?.recording;
+        if (recording) {
+          typingSessionStore.showRecording(recording);
+        }
+      }
+    }
+    ui.focusLiveInput();
+    return true;
+  }
+
   // Internal delegate: the application dispatcher checks this owner's availability.
   function execute(command: TStudioCommand): boolean {
     switch (resolveOperation(command)) {
       case EAppCommand.StartRecording:
-        // Capture admission and replacement must remain one synchronous workflow.
-        typingSessionStore.stopReplay();
-        if (!typingSessionStore.startRecording()) return false;
-        workspaceActions.abandonSaveAttempt();
-        workspaceStore.clearRecording({
-          expectedRecordingId: workspaceStore.workspaceRecording?.id ?? null,
-          expectedGeneration: workspaceStore.workspaceGeneration,
-        });
-        workflowStore.retainCaptureReplacementTarget({
-          expectedRecordingId: null,
-          expectedGeneration: workspaceStore.workspaceGeneration,
-        });
-        ui.focusLiveInput();
-        return true;
+        return startCapture();
+      case EAppCommand.RetakeRecording:
+        if (!getAvailability(EAppCommand.RetakeRecording).enabled) return false;
+        if (typingSessionStore.isRecording) {
+          workflowStore.clearCaptureReplacementTarget();
+          typingSessionStore.cancelRecording();
+        }
+        return startCapture();
       case EAppCommand.StopRecording: {
         const target = workflowStore.captureReplacementTarget;
         try {
@@ -282,7 +422,9 @@ export function useStudioCommands(
             workflowStore.clearCaptureReplacementTarget();
         }
       }
-      case EAppCommand.NewRecording:
+      case EAppCommand.ClearSession:
+      case EAppCommand.DiscardDraft:
+      case EAppCommand.NewSession:
         typingSessionStore.stopReplay();
         typingSessionStore.cancelRecording();
         workflowStore.clearCaptureReplacementTarget();
@@ -307,12 +449,12 @@ export function useStudioCommands(
       case EAppCommand.StopReplay:
         typingSessionStore.stopReplay();
         return true;
-      case EAppCommand.EnterZenMode:
-        studioUiStore.enterZenMode();
+      case EAppCommand.EnterChromaMode:
+        studioUiStore.enterChromaMode();
         if (!workspaceStore.workspaceRecording) ui.focusCaptionInput();
         return true;
-      case EAppCommand.ExitZenMode:
-        studioUiStore.exitZenMode();
+      case EAppCommand.ExitChromaMode:
+        studioUiStore.exitChromaMode();
         return true;
       case EAppCommand.FocusCaptionInput:
         ui.focusCaptionInput();

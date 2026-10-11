@@ -30,6 +30,7 @@ export function useAppCommands(): TAppCommands {
       const evaluation = evaluate(definition.id);
       return {
         ...definition,
+        label: evaluation.label ?? definition.label,
         ...evaluation.availability,
         relevance: evaluation.relevance,
         shortcuts: resolveCommandShortcutHints({

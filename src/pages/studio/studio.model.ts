@@ -1,6 +1,6 @@
 export enum EStudioMode {
   Studio = 'studio',
-  Zen = 'zen',
+  Chroma = 'chroma',
 }
 
 export enum EStudioStatus {

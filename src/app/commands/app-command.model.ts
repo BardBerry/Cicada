@@ -10,16 +10,19 @@ export enum EAppCommand {
   StartRecording = 'recording.start',
   StopRecording = 'recording.stop',
   ToggleRecording = 'recording.toggle',
-  NewRecording = 'recording.new',
+  RetakeRecording = 'recording.retake',
+  ClearSession = 'studio.clear-session',
+  DiscardDraft = 'recording.discard-draft',
+  NewSession = 'recording.new-session',
   SaveRecording = 'recording.save',
 
   StartReplay = 'replay.start',
   StopReplay = 'replay.stop',
   ToggleReplay = 'replay.toggle',
 
-  EnterZenMode = 'studio.enter-zen',
-  ExitZenMode = 'studio.exit-zen',
-  ToggleZenMode = 'studio.toggle-zen',
+  EnterChromaMode = 'studio.enter-chroma',
+  ExitChromaMode = 'studio.exit-chroma',
+  ToggleChromaMode = 'studio.toggle-chroma',
 
   FocusCaptionInput = 'caption-input.focus',
   BlurCaptionInput = 'caption-input.blur',
@@ -33,10 +36,10 @@ export enum EAppCommandGroup {
 }
 
 export enum ECommandRelevance {
-  ActiveOperation,
-  CurrentTask,
-  Local,
-  Global,
+  ActiveOperation = 0,
+  PrimaryAction = 1,
+  Contextual = 2,
+  Global = 3,
 }
 
 export type TCommandDefinition = {
@@ -52,6 +55,7 @@ export type TCommandAvailability =
   | { enabled: false; disabledReason: string };
 
 export type TCommandEvaluation = {
+  label?: string;
   availability: TCommandAvailability;
   relevance: ECommandRelevance | null;
   shortcutFallback?: EAppCommand;

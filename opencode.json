@@ -4,12 +4,12 @@
     "motion": {
       "type": "remote",
       "url": "https://mcp.motion.dev",
-      "enabled": true
+      "enabled": false
     },
     "motion-plus": {
       "type": "remote",
       "url": "https://mcp.motion.dev/plus",
-      "enabled": true
+      "enabled": false
     }
   }
 }

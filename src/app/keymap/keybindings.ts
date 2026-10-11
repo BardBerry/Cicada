@@ -35,9 +35,9 @@ export const KEYBINDINGS: TKeybinding[] = [
     shortcut: { code: 'KeyP', modKey: true, altKey: true },
   },
 
-  // Zen Mode
+  // Chroma Mode
   {
-    command: EAppCommand.ToggleZenMode,
+    command: EAppCommand.ToggleChromaMode,
     scope: EKeymapScope.Studio,
     shortcut: { code: 'KeyZ', modKey: true, altKey: true },
   },
