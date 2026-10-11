@@ -307,7 +307,7 @@ normalize.css
 tokens.css
 app-theme.css
 caption-theme.css
-zen-theme.css
+chroma-theme.css
 ```
 
 Do not move component layout rules into global CSS merely to reuse a selector name.

@@ -217,11 +217,11 @@ Capture and replay mechanisms belong to Typing Session, while Studio owns the de
 Conversely, if a mode only makes sense while Studio exists:
 
 ```text
-Zen mode
+Chroma mode
 → Studio lifetime
 ```
 
-then resetting Zen when Studio unmounts is appropriate.
+then resetting Chroma mode when Studio unmounts is appropriate.
 
 Ask whether the resource owner disappeared or an explicit activity policy applies. Neither case implies that unrelated state should be cleared.
 
@@ -280,7 +280,7 @@ Use app-level state when multiple high-level application areas must observe the 
 Example:
 
 ```text
-Zen presentation mode
+Chroma presentation mode
 ```
 
 affects:
@@ -325,7 +325,7 @@ OS accessibility preference
 recording caption motion
 → determined by authored presentation settings
 
-Zen / output rendering
+Chroma / output rendering
 → renders the performance deterministically
 ```
 

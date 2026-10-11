@@ -57,7 +57,7 @@ but should not know about:
 ```text
 recording
 replaying
-zen mode
+chroma mode
 ```
 
 The caller maps application semantics to the generic component API.
@@ -196,7 +196,7 @@ For example, a presentation mode that affects both Studio and AppShell may belon
 
 Application commands have registered owners, not one owner per route. Global and Studio owners coexist; additional areas within Studio may contribute their own commands through app/page orchestration without making feature code depend upward on `app/`.
 
-Each command ID has one registered owner at a time. Owners evaluate availability, palette relevance, and optional display-only shortcut fallbacks from existing state and execute their own commands. The dispatcher prefers directly assigned shortcuts over owner-provided fallback hints without reading feature-specific state. Registration rejects duplicate ownership, cleanup is identity-safe, and dispatch revalidates availability before execution. Internal commands do not require palette definitions. Palette relevance may be absent while execution remains permitted; keyboard scope comes from the current route rather than a command's registration. Global bindings remain active on every route, and Studio bindings remain active throughout Studio, including Zen mode.
+Each command ID has one registered owner at a time. Owners evaluate availability, palette relevance, and optional display-only shortcut fallbacks from existing state and execute their own commands. The dispatcher prefers directly assigned shortcuts over owner-provided fallback hints without reading feature-specific state. Registration rejects duplicate ownership, cleanup is identity-safe, and dispatch revalidates availability before execution. Internal commands do not require palette definitions. Palette relevance may be absent while execution remains permitted; keyboard scope comes from the current route rather than a command's registration. Global bindings remain active on every route, and Studio bindings remain active throughout Studio, including Chroma mode.
 
 ---
 
@@ -304,7 +304,7 @@ Browsing the catalog must not replace Workspace content or change its presentati
 
 Studio derives read-only recording preview from the presence of Workspace content; temporary and saved recordings share preview behavior but have different actions. Capture and replay remain independent activities. New Recording unloads content without deleting a saved catalog entry. An admitted retake starts capture before clearing the previous temporary take, then advances Workspace generation and retains the new capture target synchronously.
 
-Studio departure is blocked during capture, both by navigation command availability and by a route-leave guard. Capture must be stopped explicitly before leaving. Active replay stops and restores the current recording's static preview on actual Studio unmount, not on a navigation attempt that may be cancelled. Departure exits Zen but preserves Workspace content, free typing, appearance settings, in-flight saves, and retained retry attempts. These lifecycle policies are independent of palette visibility and ranking.
+Studio departure is blocked during capture, both by navigation command availability and by a route-leave guard. Capture must be stopped explicitly before leaving. Active replay stops and restores the current recording's static preview on actual Studio unmount, not on a navigation attempt that may be cancelled. Departure exits Chroma mode but preserves Workspace content, free typing, appearance settings, in-flight saves, and retained retry attempts. These lifecycle policies are independent of palette visibility and ranking.
 
 ---
 

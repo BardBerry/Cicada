@@ -5,20 +5,20 @@ import { EStudioMode } from '../pages/studio/studio.model';
 
 export const useStudioUiStore = defineStore('studio-ui', () => {
   const studioMode = ref<EStudioMode>(EStudioMode.Studio);
-  const isZenMode = computed(() => studioMode.value === EStudioMode.Zen);
+  const isChromaMode = computed(() => studioMode.value === EStudioMode.Chroma);
 
-  function exitZenMode() {
+  function exitChromaMode() {
     studioMode.value = EStudioMode.Studio;
   }
 
-  function enterZenMode() {
-    studioMode.value = EStudioMode.Zen;
+  function enterChromaMode() {
+    studioMode.value = EStudioMode.Chroma;
   }
 
   return {
     studioMode,
-    isZenMode,
-    exitZenMode,
-    enterZenMode,
+    isChromaMode,
+    exitChromaMode,
+    enterChromaMode,
   };
 });

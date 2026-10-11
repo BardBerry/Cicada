@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {
   CircleIcon,
+  CircleXIcon,
   MaximizeIcon,
-  PlayIcon,
-  PlusIcon,
+  RotateCcwIcon,
   SaveIcon,
   SquareIcon,
 } from '@lucide/vue';
@@ -15,11 +15,12 @@ type TProps = {
   isReplaying: boolean;
   canToggleRecording: boolean;
   canToggleReplay: boolean;
-  canEnterZen: boolean;
+  canEnterChroma: boolean;
   isRecordingPreview: boolean;
   isSavedRecording: boolean;
   canSave: boolean;
-  canStartNew: boolean;
+  canClearSession: boolean;
+  canDiscardDraft: boolean;
   isSaving: boolean;
   isRetry: boolean;
 };
@@ -29,9 +30,11 @@ const props = defineProps<TProps>();
 const emit = defineEmits<{
   toggleRecording: [];
   toggleReplay: [];
-  enterZen: [];
+  enterChroma: [];
   saveRecording: [];
-  newRecording: [];
+  clearSession: [];
+  discardDraft: [];
+  closeRecording: [];
 }>();
 </script>
 
@@ -49,7 +52,8 @@ const emit = defineEmits<{
     <UiButton
       v-if="props.isRecordingPreview"
       class="replay"
-      :icon="props.isReplaying ? SquareIcon : PlayIcon"
+      :class="{ 'replay--replaying': props.isReplaying }"
+      :icon="props.isReplaying ? SquareIcon : RotateCcwIcon"
       :disabled="!props.canToggleReplay"
       :aria-label="props.isReplaying ? 'Stop replay' : 'Replay'"
       @click="emit('toggleReplay')"
@@ -63,7 +67,7 @@ const emit = defineEmits<{
     </UiButton>
 
     <UiButton
-      v-if="!props.isSavedRecording"
+      v-if="!props.isRecordingPreview"
       class="record"
       :class="{
         'record--recording': props.isRecording,
@@ -83,24 +87,24 @@ const emit = defineEmits<{
     </UiButton>
 
     <UiButton
-      v-if="props.isSavedRecording"
-      :icon="PlusIcon"
-      :disabled="!props.canStartNew"
-      aria-label="New recording"
-      @click="emit('newRecording')"
+      v-if="props.isRecordingPreview && !props.isSavedRecording"
+      :icon="CircleXIcon"
+      :disabled="!props.canDiscardDraft"
+      aria-label="Discard draft"
+      @click="emit('discardDraft')"
     >
-      New
+      Discard
     </UiButton>
 
     <span class="divider" aria-hidden="true"></span>
 
     <UiButton
-      class="zen"
+      class="chroma"
       :icon="MaximizeIcon"
-      :disabled="!props.canEnterZen"
-      @click="emit('enterZen')"
+      :disabled="!props.canEnterChroma"
+      @click="emit('enterChroma')"
     >
-      Zen
+      Chroma
     </UiButton>
   </div>
 </template>
@@ -132,10 +136,14 @@ const emit = defineEmits<{
 }
 
 .replay {
+  --ui-button-icon-fill: none;
+}
+
+.replay--replaying {
   --ui-button-icon-fill: currentColor;
 }
 
-.zen {
+.chroma {
   --ui-button-icon-stroke-width: 2.5;
 }
 

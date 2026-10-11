@@ -17,6 +17,8 @@ Before making architectural, state-management, Vue, TypeScript, or styling chang
 - Do not introduce new architectural layers merely to make the folder tree look more structured.
 - When proposing a new abstraction, explain the concrete problem that requires it.
 
+Prioritize correctness in normal usage and protection of user data. Handle realistic failure scenarios, but avoid speculative defensive logic, elaborate rollback mechanisms, and abstractions introduced solely to cover hypothetical edge cases. When you identify an unusual failure path, report its likelihood and impact before adding complexity.
+
 ## Architecture
 
 Follow:
