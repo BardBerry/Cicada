@@ -125,9 +125,12 @@ function handlePointerMove(event: PointerEvent) {
   const previous = lastPointerPosition;
   lastPointerPosition = position;
 
-  if (previous && (previous.x !== position.x || previous.y !== position.y)) {
-    isKeyboardNavigation.value = false;
+  // Block stationary-pointer events before Reka's item handler, without waiting for a render.
+  if (previous && previous.x === position.x && previous.y === position.y) {
+    event.stopPropagation();
+    return;
   }
+  isKeyboardNavigation.value = false;
 }
 
 function handleHighlight(
@@ -211,7 +214,7 @@ function handleTab(event: KeyboardEvent) {
     <ListboxRoot
       ref="listbox"
       as-child
-      :highlight-on-hover="!isKeyboardNavigation"
+      highlight-on-hover
       @highlight="handleHighlight"
     >
       <div
@@ -411,7 +414,7 @@ function handleTab(event: KeyboardEvent) {
 
 .group-label {
   padding: var(--space-2) var(--space-3);
-  color: var(--app-muted);
+  color: var(--app-accent);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
 }

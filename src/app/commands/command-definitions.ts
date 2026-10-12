@@ -2,6 +2,7 @@ import {
   CircleIcon,
   CirclePlusIcon,
   CircleXIcon,
+  FolderOpenIcon,
   MaximizeIcon,
   MinimizeIcon,
   MopIcon,
@@ -20,6 +21,13 @@ import {
 } from './app-command.model';
 
 export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
+  {
+    id: EAppCommand.OpenRecording,
+    label: 'Open Recording',
+    icon: FolderOpenIcon,
+    group: EAppCommandGroup.Recording,
+    keywords: ['saved', 'open', 'browse', 'captions'],
+  },
   {
     id: EAppCommand.StartRecording,
     label: 'Start Recording',

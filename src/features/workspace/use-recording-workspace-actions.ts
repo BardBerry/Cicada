@@ -9,6 +9,7 @@ import {
 
 type TOpenRecordingParams = {
   recordingId: string;
+  canAccept: () => boolean;
   onAccepted: (recording: TWorkspaceRecording) => void;
 };
 
@@ -19,10 +20,12 @@ export function useRecordingWorkspaceActions() {
 
   async function openRecording({
     recordingId,
+    canAccept,
     onAccepted,
   }: TOpenRecordingParams): Promise<boolean> {
     if (
       typingSessionStore.isRecording ||
+      !canAccept() ||
       catalogStore.isBusy ||
       workspaceStore.saveAttempt
     ) {
@@ -33,7 +36,7 @@ export function useRecordingWorkspaceActions() {
     const expectedGeneration = workspaceStore.workspaceGeneration;
     const loaded = await catalogStore.loadRecording(recordingId);
 
-    if (!loaded || typingSessionStore.isRecording) return false;
+    if (!loaded || typingSessionStore.isRecording || !canAccept()) return false;
 
     const accepted = workspaceStore.replaceRecording({
       expectedRecordingId,

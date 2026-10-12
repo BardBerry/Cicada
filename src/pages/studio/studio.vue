@@ -16,6 +16,7 @@ import { useAppCommandDispatcher } from '@/app/commands/app-command-context';
 import { useStudioUiStore } from '@/app/use-studio-ui-store';
 import CaptionCanvas from '@/features/captions/caption-canvas.vue';
 import { useCaptionLayoutStore } from '@/features/captions/use-caption-layout-store';
+import RecordingPicker from '@/features/recordings/recording-picker.vue';
 import { useRecordingCatalogStore } from '@/features/recordings/use-recording-catalog-store';
 import type { TTypingEvent } from '@/features/typing/typing-event.model';
 import TypingSurface from '@/features/typing/typing-surface.vue';
@@ -28,8 +29,10 @@ import { EStudioStatus } from './studio.model';
 import StudioControls from './studio-controls.vue';
 import StudioStatus from './studio-status.vue';
 import { useStudioCommands } from './use-studio-commands';
+import { useStudioRecordingPicker } from './use-studio-recording-picker';
 
 const typingSurface = useTemplateRef('typingSurface');
+const studio = useTemplateRef('studio');
 const isTypingFocused = ref(false);
 let isMounted = false;
 let detachCommands: (() => void) | undefined;
@@ -41,7 +44,17 @@ const typingSessionStore = useTypingSessionStore();
 const captionLayoutStore = useCaptionLayoutStore();
 const workspaceStore = useRecordingWorkspaceStore();
 const catalogStore = useRecordingCatalogStore();
+const openRecordingAvailability = computed(() =>
+  getAvailability(EAppCommand.OpenRecording),
+);
+const recordingPicker = useStudioRecordingPicker({
+  canOpen: () => openRecordingAvailability.value.enabled,
+  isPaletteOpen: () => paletteOpen.value,
+  focusStudio: () => studio.value?.focus(),
+});
+const { isOpen: recordingPickerOpen } = recordingPicker;
 const studioCommands = useStudioCommands({
+  openRecordingPicker: recordingPicker.open,
   focusLiveInput,
   focusCaptionInput: () => typingSurface.value?.focus(),
   blurCaptionInput: () => typingSurface.value?.blur(),
@@ -115,6 +128,7 @@ function focusLiveInput() {
     if (
       !isMounted ||
       paletteOpen.value ||
+      recordingPickerOpen.value ||
       workspaceGeneration.value !== expectedGeneration ||
       isRecordingPreview.value ||
       isReplaying.value
@@ -175,7 +189,25 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="studio" :class="{ 'studio--chroma': isChromaMode }">
+  <div
+    ref="studio"
+    class="studio"
+    :class="{ 'studio--chroma': isChromaMode }"
+    tabindex="-1"
+  >
+    <RecordingPicker
+      v-model:open="recordingPickerOpen"
+      :recordings="catalogStore.recordings"
+      :current-recording-id="
+        isSavedRecording ? (workspaceRecording?.id ?? null) : null
+      "
+      :loading="catalogStore.isBusy"
+      :error-message="errorMessage"
+      :disabled-reason="openRecordingAvailability.disabledReason"
+      @select="recordingPicker.openRecording"
+      @retry="catalogStore.listRecordings()"
+      @close-focus="recordingPicker.handleCloseFocus"
+    />
     <CaptionCanvas
       :key="sessionRevision"
       :committed-captions="session.captions"
