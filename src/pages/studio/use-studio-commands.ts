@@ -18,6 +18,7 @@ import { EWorkspaceRecordingState } from '@/features/workspace/workspace-recordi
 import { useStudioRecordingWorkflowStore } from './use-studio-recording-workflow-store';
 
 const STUDIO_COMMANDS = [
+  EAppCommand.OpenRecording,
   EAppCommand.StartRecording,
   EAppCommand.StopRecording,
   EAppCommand.ToggleRecording,
@@ -39,6 +40,7 @@ const STUDIO_COMMANDS = [
 type TStudioCommand = (typeof STUDIO_COMMANDS)[number];
 
 type TUseStudioCommandsParams = {
+  openRecordingPicker: () => void;
   focusLiveInput: () => void;
   focusCaptionInput: () => void;
   blurCaptionInput: () => void;
@@ -122,6 +124,8 @@ export function useStudioCommands(
     const isReplaying = typingSessionStore.isReplaying;
 
     switch (command) {
+      case EAppCommand.OpenRecording:
+        return ECommandRelevance.Contextual;
       case EAppCommand.StartRecording:
         if (
           isRecording ||
@@ -190,6 +194,32 @@ export function useStudioCommands(
     const content = workspaceStore.workspaceRecording;
 
     switch (command) {
+      case EAppCommand.OpenRecording:
+        if (typingSessionStore.isRecording) {
+          return { enabled: false, disabledReason: 'Finish recording first' };
+        }
+        if (typingSessionStore.isReplaying) {
+          return { enabled: false, disabledReason: 'Stop replay first' };
+        }
+        if (workspaceStore.isSaveInFlight) {
+          return { enabled: false, disabledReason: 'Save in progress' };
+        }
+        if (content?.state === EWorkspaceRecordingState.Temporary) {
+          return {
+            enabled: false,
+            disabledReason: 'Save or discard the draft first',
+          };
+        }
+        if (workflowStore.captureReplacementTarget) {
+          return { enabled: false, disabledReason: 'Recording is finishing' };
+        }
+        if (catalogStore.isBusy) {
+          return {
+            enabled: false,
+            disabledReason: 'Recording catalog is busy',
+          };
+        }
+        return { enabled: true };
       case EAppCommand.StartRecording:
         if (typingSessionStore.isRecording) {
           return { enabled: false, disabledReason: 'Recording in progress' };
@@ -391,6 +421,9 @@ export function useStudioCommands(
   // Internal delegate: the application dispatcher checks this owner's availability.
   function execute(command: TStudioCommand): boolean {
     switch (resolveOperation(command)) {
+      case EAppCommand.OpenRecording:
+        ui.openRecordingPicker();
+        return true;
       case EAppCommand.StartRecording:
         return startCapture();
       case EAppCommand.RetakeRecording:

@@ -15,6 +15,7 @@ export enum EAppCommand {
   DiscardDraft = 'recording.discard-draft',
   NewSession = 'recording.new-session',
   SaveRecording = 'recording.save',
+  OpenRecording = 'recording.open',
 
   StartReplay = 'replay.start',
   StopReplay = 'replay.stop',

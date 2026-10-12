@@ -18,6 +18,11 @@ export const KEYBINDINGS: TKeybinding[] = [
 
   // Recording
   {
+    command: EAppCommand.OpenRecording,
+    scope: EKeymapScope.Studio,
+    shortcut: { code: 'KeyO', modKey: true },
+  },
+  {
     command: EAppCommand.ToggleRecording,
     scope: EKeymapScope.Studio,
     shortcut: { code: 'KeyR', modKey: true, shiftKey: true },
