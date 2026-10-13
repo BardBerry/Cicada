@@ -13,6 +13,10 @@ pub fn load(webview: &tauri::Webview, payload: &tauri::webview::PageLoadPayload)
             &std::env::var("CICADA_NATIVE_EXPORT_VERIFY").unwrap_or_default(),
         )
         .unwrap_or_default();
+        if mode == "\"snapshot-density\"" {
+            let _ = webview.eval("window.__TAURI_INTERNALS__.invoke('start_snapshot_density').catch(error => window.__TAURI_INTERNALS__.invoke('export_verification_report', {result: {bootstrapError: String(error)}}))");
+            return;
+        }
         let module = serde_json::to_string(
             &std::env::var("CICADA_NATIVE_EXPORT_VERIFY_MODULE")
                 .unwrap_or_else(|_| "/scripts/export-recording/native-verification.ts".into()),
