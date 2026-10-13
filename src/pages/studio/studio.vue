@@ -16,6 +16,7 @@ import { useAppCommandDispatcher } from '@/app/commands/app-command-context';
 import { useStudioUiStore } from '@/app/use-studio-ui-store';
 import CaptionCanvas from '@/features/captions/caption-canvas.vue';
 import { useCaptionLayoutStore } from '@/features/captions/use-caption-layout-store';
+import { useRecordingExportStore } from '@/features/recording-export/use-recording-export-store';
 import RecordingPicker from '@/features/recordings/recording-picker.vue';
 import { useRecordingCatalogStore } from '@/features/recordings/use-recording-catalog-store';
 import type { TTypingEvent } from '@/features/typing/typing-event.model';
@@ -44,6 +45,7 @@ const typingSessionStore = useTypingSessionStore();
 const captionLayoutStore = useCaptionLayoutStore();
 const workspaceStore = useRecordingWorkspaceStore();
 const catalogStore = useRecordingCatalogStore();
+const exportStore = useRecordingExportStore();
 const openRecordingAvailability = computed(() =>
   getAvailability(EAppCommand.OpenRecording),
 );
@@ -232,13 +234,17 @@ onUnmounted(() => {
       :status="studioStatus"
       :recording-label="recordingLabel"
     />
-    <p
-      v-if="!isChromaMode && (errorMessage || warningMessage)"
-      class="message"
-      role="alert"
-    >
-      {{ errorMessage || warningMessage }}
-    </p>
+    <div v-if="!isChromaMode" class="message">
+      <p v-if="errorMessage || warningMessage" role="alert">
+        {{ errorMessage || warningMessage }}
+      </p>
+      <p v-if="exportStore.errorMessage" role="alert">
+        {{ exportStore.errorMessage }}
+      </p>
+      <p v-if="exportStore.lastExportPath" role="status">
+        MP4 exported: <code>{{ exportStore.lastExportPath }}</code>
+      </p>
+    </div>
     <StudioControls
       v-if="!isChromaMode"
       class="controls"
@@ -318,5 +324,10 @@ onUnmounted(() => {
   max-width: min(420px, calc(100% - 2 * var(--chrome-inset)));
   margin: var(--space-5) 0 0;
   color: var(--app-muted);
+  overflow-wrap: anywhere;
+}
+
+.message p {
+  margin: 0;
 }
 </style>

@@ -1,6 +1,7 @@
+import { CURRENT_PLATFORM, EPlatform } from '@/shared/platform/platform';
+
 import type { TShortcut } from './keymap.model';
 import { normalizeShortcut } from './normalize-shortcut';
-import { EShortcutPlatform, SHORTCUT_PLATFORM } from './shortcut-platform';
 
 type TShortcutDisplayToken = {
   text: string;
@@ -9,13 +10,13 @@ type TShortcutDisplayToken = {
 
 export function formatShortcut({
   shortcut,
-  platform = SHORTCUT_PLATFORM,
+  platform = CURRENT_PLATFORM,
 }: {
   shortcut: TShortcut;
-  platform?: EShortcutPlatform;
+  platform?: EPlatform;
 }): { tokens: TShortcutDisplayToken[]; accessibleLabel: string } {
   const normalized = normalizeShortcut({ shortcut, platform });
-  const isMac = platform === EShortcutPlatform.MacOS;
+  const isMac = platform === EPlatform.MacOS;
   const tokens: TShortcutDisplayToken[] = [];
   if (normalized.ctrlKey)
     tokens.push({ text: isMac ? '⌃' : 'Ctrl', label: 'Control' });
@@ -27,7 +28,7 @@ export function formatShortcut({
     tokens.push(
       isMac
         ? { text: '⌘', label: 'Command' }
-        : platform === EShortcutPlatform.Windows
+        : platform === EPlatform.Windows
           ? { text: 'Win', label: 'Windows' }
           : { text: 'Super', label: 'Super' },
     );

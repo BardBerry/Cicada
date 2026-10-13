@@ -13,6 +13,7 @@ type TProps = {
   activeText: string;
   layout: TCaptionLayout;
   showCaret: boolean;
+  onAnimationUpdate?: () => void;
 };
 
 const props = defineProps<TProps>();
@@ -80,6 +81,7 @@ const renderedHistory = computed(() => {
                 opacity: props.activeText ? 1 : 0,
               }"
               :transition="captionTransition"
+              :on-update="props.onAnimationUpdate"
             >
               <Caption
                 :text="props.activeText || '\u00a0'"
@@ -108,6 +110,7 @@ const renderedHistory = computed(() => {
                         : 12,
                   }"
                   :transition="captionTransition"
+                  :on-update="props.onAnimationUpdate"
                 >
                   <Caption
                     :text="caption.text"

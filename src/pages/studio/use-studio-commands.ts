@@ -9,16 +9,20 @@ import {
 } from '@/app/commands/app-command.model';
 import { EAppRouteName } from '@/app/router/app-route.model';
 import { useStudioUiStore } from '@/app/use-studio-ui-store';
+import { useCaptionLayoutStore } from '@/features/captions/use-caption-layout-store';
+import { useRecordingExportStore } from '@/features/recording-export/use-recording-export-store';
 import { useRecordingCatalogStore } from '@/features/recordings/use-recording-catalog-store';
 import { useTypingSessionStore } from '@/features/typing/use-typing-session-store';
 import { useRecordingWorkspaceActions } from '@/features/workspace/use-recording-workspace-actions';
 import { useRecordingWorkspaceStore } from '@/features/workspace/use-recording-workspace-store';
 import { EWorkspaceRecordingState } from '@/features/workspace/workspace-recording.model';
+import { CURRENT_PLATFORM, EPlatform } from '@/shared/platform/platform';
 
 import { useStudioRecordingWorkflowStore } from './use-studio-recording-workflow-store';
 
 const STUDIO_COMMANDS = [
   EAppCommand.OpenRecording,
+  EAppCommand.ExportRecording,
   EAppCommand.StartRecording,
   EAppCommand.StopRecording,
   EAppCommand.ToggleRecording,
@@ -56,6 +60,8 @@ export function useStudioCommands(
   const catalogStore = useRecordingCatalogStore();
   const workflowStore = useStudioRecordingWorkflowStore();
   const workspaceActions = useRecordingWorkspaceActions();
+  const exportStore = useRecordingExportStore();
+  const captionLayoutStore = useCaptionLayoutStore();
 
   function resolveOperation(
     command: TStudioCommand,
@@ -124,6 +130,10 @@ export function useStudioCommands(
     const isReplaying = typingSessionStore.isReplaying;
 
     switch (command) {
+      case EAppCommand.ExportRecording:
+        return CURRENT_PLATFORM === EPlatform.MacOS
+          ? ECommandRelevance.Contextual
+          : null;
       case EAppCommand.OpenRecording:
         return ECommandRelevance.Contextual;
       case EAppCommand.StartRecording:
@@ -194,6 +204,21 @@ export function useStudioCommands(
     const content = workspaceStore.workspaceRecording;
 
     switch (command) {
+      case EAppCommand.ExportRecording:
+        if (CURRENT_PLATFORM !== EPlatform.MacOS)
+          return {
+            enabled: false,
+            disabledReason: 'Experimental export requires macOS',
+          };
+        if (typingSessionStore.isRecording)
+          return { enabled: false, disabledReason: 'Finish recording first' };
+        if (workflowStore.captureReplacementTarget)
+          return { enabled: false, disabledReason: 'Recording is finishing' };
+        if (exportStore.isExporting)
+          return { enabled: false, disabledReason: 'Export already running' };
+        return content
+          ? { enabled: true }
+          : { enabled: false, disabledReason: 'No recording loaded' };
       case EAppCommand.OpenRecording:
         if (typingSessionStore.isRecording) {
           return { enabled: false, disabledReason: 'Finish recording first' };
@@ -421,6 +446,15 @@ export function useStudioCommands(
   // Internal delegate: the application dispatcher checks this owner's availability.
   function execute(command: TStudioCommand): boolean {
     switch (resolveOperation(command)) {
+      case EAppCommand.ExportRecording: {
+        const recording = workspaceStore.workspaceRecording?.recording;
+        if (!recording) return false;
+        void exportStore.exportRecording({
+          recording,
+          layout: captionLayoutStore.layout,
+        });
+        return true;
+      }
       case EAppCommand.OpenRecording:
         ui.openRecordingPicker();
         return true;
