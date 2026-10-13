@@ -1,12 +1,13 @@
+import { CURRENT_PLATFORM, EPlatform } from '@/shared/platform/platform';
+
 import type { TShortcut } from './keymap.model';
-import { EShortcutPlatform, SHORTCUT_PLATFORM } from './shortcut-platform';
 
 export function normalizeShortcut({
   shortcut,
-  platform = SHORTCUT_PLATFORM,
+  platform = CURRENT_PLATFORM,
 }: {
   shortcut: TShortcut;
-  platform?: EShortcutPlatform;
+  platform?: EPlatform;
 }) {
   // Mod adds the primary modifier; explicit modifiers never cancel it.
   return {
@@ -14,10 +15,10 @@ export function normalizeShortcut({
     altKey: shortcut.altKey ?? false,
     ctrlKey:
       (shortcut.ctrlKey ?? false) ||
-      (shortcut.modKey === true && platform !== EShortcutPlatform.MacOS),
+      (shortcut.modKey === true && platform !== EPlatform.MacOS),
     metaKey:
       (shortcut.metaKey ?? false) ||
-      (shortcut.modKey === true && platform === EShortcutPlatform.MacOS),
+      (shortcut.modKey === true && platform === EPlatform.MacOS),
     shiftKey: shortcut.shiftKey ?? false,
   };
 }
@@ -25,11 +26,11 @@ export function normalizeShortcut({
 export function matchesShortcut({
   left,
   right,
-  platform = SHORTCUT_PLATFORM,
+  platform = CURRENT_PLATFORM,
 }: {
   left: TShortcut;
   right: TShortcut;
-  platform?: EShortcutPlatform;
+  platform?: EPlatform;
 }): boolean {
   const first = normalizeShortcut({ shortcut: left, platform });
   const second = normalizeShortcut({ shortcut: right, platform });

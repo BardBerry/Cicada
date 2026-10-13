@@ -1,11 +1,12 @@
+import { EPlatform } from '@/shared/platform/platform';
+
 import type { TKeybinding } from './keymap.model';
 import { matchesShortcut, normalizeShortcut } from './normalize-shortcut';
-import { EShortcutPlatform } from './shortcut-platform';
 
 export type TKeybindingConflict = {
   first: TKeybinding;
   second: TKeybinding;
-  platforms: EShortcutPlatform[];
+  platforms: EPlatform[];
 };
 
 export function findKeybindingConflicts(
@@ -19,7 +20,7 @@ export function findKeybindingConflicts(
         second.scope === undefined ||
         first.scope === second.scope;
       if (!overlaps) continue;
-      const platforms = Object.values(EShortcutPlatform).filter((platform) =>
+      const platforms = Object.values(EPlatform).filter((platform) =>
         matchesShortcut({
           left: first.shortcut,
           right: second.shortcut,

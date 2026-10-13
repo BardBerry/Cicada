@@ -1,19 +1,20 @@
+import { CURRENT_PLATFORM, type EPlatform } from '@/shared/platform/platform';
+
 import type { EAppCommand } from '../commands/app-command.model';
 import { KEYBINDINGS } from './keybindings';
 import type { TKeymapContext, TShortcut } from './keymap.model';
 import { matchesShortcut } from './normalize-shortcut';
-import { type EShortcutPlatform, SHORTCUT_PLATFORM } from './shortcut-platform';
 
 type TResolveShortcutCommandParams = {
   shortcut: TShortcut;
   context: TKeymapContext;
-  platform?: EShortcutPlatform;
+  platform?: EPlatform;
 };
 
 export function resolveShortcutCommand({
   shortcut,
   context,
-  platform = SHORTCUT_PLATFORM,
+  platform = CURRENT_PLATFORM,
 }: TResolveShortcutCommandParams): EAppCommand | null {
   const contextualBinding =
     context.scope === null
@@ -40,11 +41,11 @@ export function resolveShortcutCommand({
 export function resolveCommandShortcuts({
   command,
   context,
-  platform = SHORTCUT_PLATFORM,
+  platform = CURRENT_PLATFORM,
 }: {
   command: EAppCommand;
   context: TKeymapContext;
-  platform?: EShortcutPlatform;
+  platform?: EPlatform;
 }): TShortcut[] {
   const shortcuts: TShortcut[] = [];
   for (const binding of KEYBINDINGS) {
