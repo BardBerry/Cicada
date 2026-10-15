@@ -16,7 +16,7 @@ import { useAppCommandDispatcher } from '@/app/commands/app-command-context';
 import { useStudioUiStore } from '@/app/use-studio-ui-store';
 import CaptionCanvas from '@/features/captions/caption-canvas.vue';
 import { useCaptionLayoutStore } from '@/features/captions/use-caption-layout-store';
-import { useRecordingExportStore } from '@/features/recording-export/use-recording-export-store';
+import RecordingExportDialog from '@/features/recording-export/recording-export-dialog.vue';
 import RecordingPicker from '@/features/recordings/recording-picker.vue';
 import { useRecordingCatalogStore } from '@/features/recordings/use-recording-catalog-store';
 import type { TTypingEvent } from '@/features/typing/typing-event.model';
@@ -35,6 +35,7 @@ import { useStudioRecordingPicker } from './use-studio-recording-picker';
 const typingSurface = useTemplateRef('typingSurface');
 const studio = useTemplateRef('studio');
 const isTypingFocused = ref(false);
+const exportDialogOpen = ref(false);
 let isMounted = false;
 let detachCommands: (() => void) | undefined;
 
@@ -45,7 +46,6 @@ const typingSessionStore = useTypingSessionStore();
 const captionLayoutStore = useCaptionLayoutStore();
 const workspaceStore = useRecordingWorkspaceStore();
 const catalogStore = useRecordingCatalogStore();
-const exportStore = useRecordingExportStore();
 const openRecordingAvailability = computed(() =>
   getAvailability(EAppCommand.OpenRecording),
 );
@@ -57,6 +57,9 @@ const recordingPicker = useStudioRecordingPicker({
 const { isOpen: recordingPickerOpen } = recordingPicker;
 const studioCommands = useStudioCommands({
   openRecordingPicker: recordingPicker.open,
+  openExportDialog: () => {
+    exportDialogOpen.value = true;
+  },
   focusLiveInput,
   focusCaptionInput: () => typingSurface.value?.focus(),
   blurCaptionInput: () => typingSurface.value?.blur(),
@@ -131,6 +134,7 @@ function focusLiveInput() {
       !isMounted ||
       paletteOpen.value ||
       recordingPickerOpen.value ||
+      exportDialogOpen.value ||
       workspaceGeneration.value !== expectedGeneration ||
       isRecordingPreview.value ||
       isReplaying.value
@@ -197,6 +201,17 @@ onUnmounted(() => {
     :class="{ 'studio--chroma': isChromaMode }"
     tabindex="-1"
   >
+    <RecordingExportDialog
+      v-if="exportDialogOpen && workspaceRecording"
+      v-model:open="exportDialogOpen"
+      :recording="workspaceRecording.recording"
+      :recording-id="workspaceRecording.id"
+      :layout="captionLayout"
+      @close-focus="
+        $event.preventDefault();
+        studio?.focus();
+      "
+    />
     <RecordingPicker
       v-model:open="recordingPickerOpen"
       :recordings="catalogStore.recordings"
@@ -237,12 +252,6 @@ onUnmounted(() => {
     <div v-if="!isChromaMode" class="message">
       <p v-if="errorMessage || warningMessage" role="alert">
         {{ errorMessage || warningMessage }}
-      </p>
-      <p v-if="exportStore.errorMessage" role="alert">
-        {{ exportStore.errorMessage }}
-      </p>
-      <p v-if="exportStore.lastExportPath" role="status">
-        MP4 exported: <code>{{ exportStore.lastExportPath }}</code>
       </p>
     </div>
     <StudioControls

@@ -1,7 +1,7 @@
 :root {
   --caption-font-family: 'Quicksand Variable', sans-serif;
   --caption-font-weight: 500;
-  --caption-font-size: clamp(20px, 3.5vw, 24px);
+  --caption-font-size: 24px;
   --caption-line-height: 1.45;
 
   --caption-background: var(--color-bg);

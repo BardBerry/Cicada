@@ -8,12 +8,14 @@ mod native_verification;
 pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(recording_export::RecordingExportState::default());
 
     #[cfg(not(feature = "native-export-verification"))]
     let builder = builder.invoke_handler(tauri::generate_handler![
         recording_export::export_recording,
+        recording_export::default_recording_export_directory,
         recording_export::capture_recording_export_frame,
         recording_export::finish_recording_export_render,
     ]);
@@ -23,6 +25,7 @@ pub fn run() {
         .on_page_load(native_verification::load)
         .invoke_handler(tauri::generate_handler![
             recording_export::export_recording,
+            recording_export::default_recording_export_directory,
             recording_export::capture_recording_export_frame,
             recording_export::finish_recording_export_render,
             native_verification::export_verification_report,

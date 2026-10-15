@@ -9,7 +9,6 @@ import {
 } from '@/app/commands/app-command.model';
 import { EAppRouteName } from '@/app/router/app-route.model';
 import { useStudioUiStore } from '@/app/use-studio-ui-store';
-import { useCaptionLayoutStore } from '@/features/captions/use-caption-layout-store';
 import { useRecordingExportStore } from '@/features/recording-export/use-recording-export-store';
 import { useRecordingCatalogStore } from '@/features/recordings/use-recording-catalog-store';
 import { useTypingSessionStore } from '@/features/typing/use-typing-session-store';
@@ -45,6 +44,7 @@ type TStudioCommand = (typeof STUDIO_COMMANDS)[number];
 
 type TUseStudioCommandsParams = {
   openRecordingPicker: () => void;
+  openExportDialog: () => void;
   focusLiveInput: () => void;
   focusCaptionInput: () => void;
   blurCaptionInput: () => void;
@@ -61,7 +61,6 @@ export function useStudioCommands(
   const workflowStore = useStudioRecordingWorkflowStore();
   const workspaceActions = useRecordingWorkspaceActions();
   const exportStore = useRecordingExportStore();
-  const captionLayoutStore = useCaptionLayoutStore();
 
   function resolveOperation(
     command: TStudioCommand,
@@ -447,12 +446,8 @@ export function useStudioCommands(
   function execute(command: TStudioCommand): boolean {
     switch (resolveOperation(command)) {
       case EAppCommand.ExportRecording: {
-        const recording = workspaceStore.workspaceRecording?.recording;
-        if (!recording) return false;
-        void exportStore.exportRecording({
-          recording,
-          layout: captionLayoutStore.layout,
-        });
+        if (!workspaceStore.workspaceRecording) return false;
+        ui.openExportDialog();
         return true;
       }
       case EAppCommand.OpenRecording:

@@ -331,6 +331,28 @@ Chroma / output rendering
 
 ---
 
+## MP4 Export
+
+The Recording Export Store owns the single background export, its progress,
+session-only video preferences and directory, and failed filename/placement for
+the same recording's next attempt. Studio owns whether its settings dialog is
+open; the dialog owns export placement independently of Studio's caption layout.
+Progress listeners follow the export operation and are removed on success or failure.
+
+The experimental macOS exporter renders a fixed 1920x1080 logical WebView and
+varies native snapshot bitmap dimensions. Caption dimensions, wrapping, Motion
+geometry, and the controlled animation clock are not scaled for output resolution.
+The dialog uses the same CaptionCanvas with layout projection disabled for a
+static, display-scaled preview. Native 4K detail is verified on a 2x Retina display;
+equivalent detail on a 1x display remains unverified. This is a backing-density
+verification limit, not a declared physical monitor-resolution limit.
+
+The partial MP4 is encoded on the destination filesystem and published with
+macOS exclusive rename. Existing outputs are never replaced. Working frame and
+partial-output directories are removed after completion or failure.
+
+---
+
 ## Decision Checklist
 
 Before moving state into a store, ask:

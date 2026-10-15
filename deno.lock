@@ -6,6 +6,7 @@
     "npm:@lucide/vue@^1.47.0": "1.47.0_vue@3.5.42",
     "npm:@tauri-apps/api@2": "2.12.0",
     "npm:@tauri-apps/cli@2": "2.11.4",
+    "npm:@tauri-apps/plugin-dialog@2": "2.8.0",
     "npm:@tauri-apps/plugin-fs@^2.6.0": "2.6.0",
     "npm:@tauri-apps/plugin-opener@2": "2.5.5",
     "npm:@vitejs/plugin-vue@^6.0.7": "6.0.8_vite@8.2.2_vue@3.5.42_typescript@6.0.3",
@@ -406,6 +407,12 @@
         "@tauri-apps/cli-win32-x64-msvc"
       ],
       "bin": true
+    },
+    "@tauri-apps/plugin-dialog@2.8.0": {
+      "integrity": "sha512-HSSD5C8UFE9ijD1wue84F7jjaIReFmj8AAPtS+xyjYRltJafIc4BiWHY7SJ6vbbew6u+YljEJHfyNfy5VwywXg==",
+      "dependencies": [
+        "@tauri-apps/api"
+      ]
     },
     "@tauri-apps/plugin-fs@2.6.0": {
       "integrity": "sha512-MhBAZ4rryd+h9fijd/GWDfArqiAeGI0ZNduV4wuRyUVI6wDZ+oDBY7atqtoXKDwlTUVSvpvmWJAY0ehQd/v6Uw==",
@@ -1778,6 +1785,7 @@
         "npm:@lucide/vue@^1.47.0",
         "npm:@tauri-apps/api@2",
         "npm:@tauri-apps/cli@2",
+        "npm:@tauri-apps/plugin-dialog@2",
         "npm:@tauri-apps/plugin-fs@^2.6.0",
         "npm:@tauri-apps/plugin-opener@2",
         "npm:@vitejs/plugin-vue@^6.0.7",

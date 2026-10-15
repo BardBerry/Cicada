@@ -14,6 +14,7 @@ type TProps = {
   layout: TCaptionLayout;
   showCaret: boolean;
   onAnimationUpdate?: () => void;
+  static?: boolean;
 };
 
 const props = defineProps<TProps>();
@@ -66,15 +67,20 @@ const renderedHistory = computed(() => {
       '--caption-max-width': `${props.layout.maxWidth}px`,
     }"
   >
-    <MotionConfig reduced-motion="never">
+    <MotionConfig
+      reduced-motion="never"
+      :skip-animations="props.static ?? false"
+    >
       <LayoutGroup :id="layoutGroupId">
         <div class="lane">
           <div class="anchor">
             <motion.div
               :key="activeCaptionId"
               class="item"
-              :layout-id="`caption-${activeCaptionId}`"
-              layout="position"
+              :layout-id="
+                props.static ? undefined : `caption-${activeCaptionId}`
+              "
+              :layout="props.static ? false : 'position'"
               :layout-dependency="layoutDependency"
               :initial="false"
               :animate="{
@@ -96,8 +102,10 @@ const renderedHistory = computed(() => {
                   v-for="caption in renderedHistory"
                   :key="caption.id"
                   class="item"
-                  :layout-id="`caption-${caption.id}`"
-                  layout="position"
+                  :layout-id="
+                    props.static ? undefined : `caption-${caption.id}`
+                  "
+                  :layout="props.static ? false : 'position'"
                   :layout-dependency="layoutDependency"
                   :initial="false"
                   :animate="{ opacity: 1 }"
