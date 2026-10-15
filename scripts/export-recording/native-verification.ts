@@ -88,6 +88,20 @@ async function disabledExport(search: string) {
   );
 }
 
+async function startExport() {
+  await command('recording.export', 'Export MP4');
+  const button = await waitFor(
+    () =>
+      document.querySelector<HTMLButtonElement>(
+        'button[type="submit"][form="recording-export-form"]:not(:disabled)',
+      ),
+    'export dialog',
+  );
+  if (useRecordingExportStore().isExporting)
+    throw new Error('Opening dialog started export');
+  button.click();
+}
+
 try {
   await router.isReady();
   await nextTick();
@@ -113,7 +127,7 @@ try {
   );
   const original = JSON.stringify(workspace.workspaceRecording);
   const preview = JSON.stringify(typing.session);
-  await command('recording.export', 'Export MP4');
+  await startExport();
 
   if (mode === 'error') {
     await waitFor(() => exporter.errorMessage, 'export error');
@@ -121,7 +135,7 @@ try {
       exporter.isExporting ||
       exporter.lastExportPath ||
       !document
-        .querySelector('.message [role="alert"]')
+        .querySelector('.recording-export-status [role="alert"]')
         ?.textContent?.includes('FFmpeg')
     )
       throw new Error('Export error was not reported/settled');
@@ -146,15 +160,16 @@ try {
       throw new Error('Export changed workspace or static preview');
     if (
       !document
-        .querySelector('.message [role="status"]')
-        ?.textContent?.includes(exporter.lastExportPath)
+        .querySelector('.recording-export-status .filename')
+        ?.getAttribute('title')
+        ?.includes(exporter.lastExportPath)
     )
       throw new Error('Export path was not displayed');
 
     await command('replay.start', 'Replay Recording');
     await waitFor(() => typing.isReplaying, 'normal replay');
     const mainTime = performance.now();
-    await command('recording.export', 'Export MP4');
+    await startExport();
     await waitFor(() => exporter.isExporting, 'second export');
     await waitFor(() => !exporter.isExporting, 'second export completion');
     if (!exporter.lastExportPath || exporter.errorMessage)
@@ -202,7 +217,7 @@ try {
       'unsaved draft',
     );
     const draft = JSON.stringify(workspace.workspaceRecording);
-    await command('recording.export', 'Export MP4');
+    await startExport();
     await waitFor(() => exporter.isExporting, 'draft export');
     await waitFor(() => !exporter.isExporting, 'draft export completion');
     if (!exporter.lastExportPath || exporter.errorMessage)

@@ -4,6 +4,50 @@ pub fn export_verification_report(app: tauri::AppHandle, result: serde_json::Val
     app.exit(0);
 }
 
+#[cfg(target_os = "macos")]
+pub async fn measure_export_layout(
+    window: &tauri::WebviewWindow,
+) -> Result<Option<serde_json::Value>, String> {
+    use block2::RcBlock;
+    use objc2::runtime::AnyObject;
+    use objc2_foundation::{NSError, NSString};
+    use objc2_web_kit::WKWebView;
+
+    let (sender, mut receiver) = tauri::async_runtime::channel(1);
+    window
+        .with_webview(move |platform| {
+            let setup = (|| {
+                let view = unsafe { platform.inner().cast::<WKWebView>().as_ref() }
+                    .ok_or("Missing verification WebView")?;
+                let completed = sender.clone();
+                let callback = RcBlock::new(move |value: *mut AnyObject, error: *mut NSError| {
+                    let result = (|| {
+                        if let Some(error) = unsafe { error.as_ref() } {
+                            return Err(format!("Unable to measure export layout: {error:?}"));
+                        }
+                        let value = unsafe { value.as_ref() }.ok_or("No layout measurement")?;
+                        let json = value.downcast_ref::<NSString>().ok_or("Layout measurement was not JSON text")?;
+                        serde_json::from_str(&json.to_string()).map_err(|e| e.to_string())
+                    })();
+                    let _ = completed.try_send(result);
+                });
+                let script = NSString::from_str(
+                    "JSON.stringify(window.cicadaExportVerify ? window.cicadaExportMeasureLayout() : null)",
+                );
+                unsafe { view.evaluateJavaScript_completionHandler(&script, Some(&callback)); }
+                Ok::<(), String>(())
+            })();
+            if let Err(error) = setup {
+                let _ = sender.try_send(Err(error));
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    receiver
+        .recv()
+        .await
+        .ok_or("No layout measurement callback")?
+}
+
 pub fn load(webview: &tauri::Webview, payload: &tauri::webview::PageLoadPayload) {
     if webview.label() == "main"
         && payload.event() == tauri::webview::PageLoadEvent::Finished

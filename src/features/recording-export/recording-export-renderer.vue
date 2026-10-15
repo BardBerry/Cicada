@@ -47,7 +47,7 @@ onMounted(async () => {
       await renderAt(
         index === input.frameCount - 1
           ? input.recording.durationMs
-          : (index * 1000) / 30,
+          : (index * 1000) / input.settings.fps,
       );
       maxItems = Math.max(maxItems, document.querySelectorAll('.item').length);
       await invoke('capture_recording_export_frame', { index });

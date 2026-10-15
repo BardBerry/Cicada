@@ -3,6 +3,8 @@ import { storeToRefs } from 'pinia';
 import { nextTick, provide } from 'vue';
 import { RouterView } from 'vue-router';
 
+import RecordingExportStatus from '@/features/recording-export/recording-export-status.vue';
+
 import AppNavigation from './app-navigation.vue';
 import type { EAppCommand } from './commands/app-command.model';
 import { APP_COMMANDS_KEY } from './commands/app-command-context';
@@ -49,6 +51,7 @@ function handlePaletteCloseFocus(event: Event) {
     <main class="main">
       <RouterView />
     </main>
+    <RecordingExportStatus v-if="!isChromaMode" />
     <CommandPalette
       v-model:open="paletteOpen"
       :commands="resolvedCommands"
