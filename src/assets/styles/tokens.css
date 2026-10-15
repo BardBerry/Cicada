@@ -17,6 +17,9 @@
   --color-recording: #b34e36;
   --color-replay: #d9a21b;
 
+  /* Capture / video key color */
+  --color-chroma-green: #00ff00;
+
   /* Typography*/
   --font-family-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
@@ -45,6 +48,7 @@
 
   /* Controls */
 
+  --control-size-sm: 36px;
   --control-size-md: 48px;
 
   /* Border Radius */

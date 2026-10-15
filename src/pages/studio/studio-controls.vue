@@ -2,9 +2,9 @@
 import {
   CircleIcon,
   CircleXIcon,
-  MaximizeIcon,
   RotateCcwIcon,
   SaveIcon,
+  SquareArrowRightExit,
   SquareIcon,
 } from '@lucide/vue';
 
@@ -15,11 +15,10 @@ type TProps = {
   isReplaying: boolean;
   canToggleRecording: boolean;
   canToggleReplay: boolean;
-  canEnterChroma: boolean;
+  canExport: boolean;
   isRecordingPreview: boolean;
   isSavedRecording: boolean;
   canSave: boolean;
-  canClearSession: boolean;
   canDiscardDraft: boolean;
   isSaving: boolean;
   isRetry: boolean;
@@ -30,11 +29,9 @@ const props = defineProps<TProps>();
 const emit = defineEmits<{
   toggleRecording: [];
   toggleReplay: [];
-  enterChroma: [];
+  exportRecording: [];
   saveRecording: [];
-  clearSession: [];
   discardDraft: [];
-  closeRecording: [];
 }>();
 </script>
 
@@ -96,15 +93,13 @@ const emit = defineEmits<{
       Discard
     </UiButton>
 
-    <span class="divider" aria-hidden="true"></span>
-
     <UiButton
-      class="chroma"
-      :icon="MaximizeIcon"
-      :disabled="!props.canEnterChroma"
-      @click="emit('enterChroma')"
+      v-if="props.isRecordingPreview"
+      :icon="SquareArrowRightExit"
+      :disabled="!props.canExport"
+      @click="emit('exportRecording')"
     >
-      Chroma
+      Export…
     </UiButton>
   </div>
 </template>
@@ -135,18 +130,6 @@ const emit = defineEmits<{
   --ui-button-primary-background: var(--app-recording);
 }
 
-.replay {
-  --ui-button-icon-fill: none;
-}
-
-.replay--replaying {
-  --ui-button-icon-fill: currentColor;
-}
-
-.chroma {
-  --ui-button-icon-stroke-width: 2.5;
-}
-
 .label {
   display: inline-grid;
 }
@@ -158,11 +141,5 @@ const emit = defineEmits<{
 
 .label-measure {
   visibility: hidden;
-}
-
-.divider {
-  width: 1px;
-  height: 24px;
-  background: var(--app-border);
 }
 </style>

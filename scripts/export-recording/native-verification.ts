@@ -4,8 +4,10 @@ import { nextTick } from 'vue';
 import { useRecordingExportStore } from '@/features/recording-export/use-recording-export-store';
 
 import { router } from '../../src/app/router/router';
+import { useStudioUiStore } from '../../src/app/use-studio-ui-store';
 import { useTypingSessionStore } from '../../src/features/typing/use-typing-session-store';
 import { useRecordingWorkspaceStore } from '../../src/features/workspace/use-recording-workspace-store';
+import { EStudioView } from '../../src/pages/studio/studio.model';
 
 // Runs inside the actual Tauri main WebView, only with the opt-in Cargo feature.
 async function waitFor<T>(
@@ -58,6 +60,11 @@ async function command(id: string, search: string) {
     row.hasAttribute('data-disabled')
   )
     throw new Error(`Command disabled: ${row.textContent}`);
+  if (
+    id === 'recording.export' &&
+    row.querySelector('.label')?.textContent !== 'Export Video'
+  )
+    throw new Error(`Unexpected export label: ${row.textContent}`);
   row.click();
   await waitFor(
     () => !document.querySelector('.command-palette'),
@@ -66,7 +73,7 @@ async function command(id: string, search: string) {
 }
 
 async function disabledExport(search: string) {
-  await palette('Export MP4');
+  await palette('Export');
   const row = await waitFor(
     () =>
       document.querySelector<HTMLElement>('[data-command="recording.export"]'),
@@ -89,7 +96,7 @@ async function disabledExport(search: string) {
 }
 
 async function startExport() {
-  await command('recording.export', 'Export MP4');
+  await command('recording.export', 'Export Video');
   const button = await waitFor(
     () =>
       document.querySelector<HTMLButtonElement>(
@@ -99,6 +106,8 @@ async function startExport() {
   );
   if (useRecordingExportStore().isExporting)
     throw new Error('Opening dialog started export');
+  if (useStudioUiStore().view !== EStudioView.VideoFrame)
+    throw new Error('Export did not select Video Frame');
   button.click();
 }
 
@@ -189,6 +198,7 @@ try {
     await command('replay.stop', 'Stop Replay');
     await command('recording.new-session', 'New session');
     await waitFor(() => !workspace.workspaceRecording, 'unloaded workspace');
+    await command('studio.workspace-view', 'Workspace Mode');
     await command('recording.start', 'Start Recording');
     await waitFor(() => typing.isRecording, 'draft capture');
     await disabledExport('Finish recording first');

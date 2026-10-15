@@ -23,8 +23,22 @@ import {
 
 export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
   {
+    id: EAppCommand.SelectWorkspaceView,
+    label: 'Workspace Mode',
+    icon: PanelsTopLeftIcon,
+    group: EAppCommandGroup.App,
+    keywords: ['workspace', 'view', 'canvas', 'typing'],
+  },
+  {
+    id: EAppCommand.SelectVideoFrameView,
+    label: 'Video Frame Mode',
+    icon: PanelsTopLeftIcon,
+    group: EAppCommandGroup.App,
+    keywords: ['video', 'frame', 'view', 'composition', 'canvas'],
+  },
+  {
     id: EAppCommand.ExportRecording,
-    label: 'Export MP4',
+    label: 'Export Video',
     icon: SquareArrowRightExit,
     group: EAppCommandGroup.Recording,
     keywords: ['export', 'video', 'mp4', 'render'],

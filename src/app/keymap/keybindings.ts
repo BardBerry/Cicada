@@ -15,6 +15,10 @@ export const KEYBINDINGS: TKeybinding[] = [
     command: EAppCommand.GoToSettings,
     shortcut: { code: 'Comma', modKey: true },
   },
+  {
+    command: EAppCommand.ToggleStudioView,
+    shortcut: { code: 'KeyH', modKey: true },
+  },
 
   // Recording
   {

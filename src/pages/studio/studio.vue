@@ -16,6 +16,7 @@ import { useAppCommandDispatcher } from '@/app/commands/app-command-context';
 import { useStudioUiStore } from '@/app/use-studio-ui-store';
 import CaptionCanvas from '@/features/captions/caption-canvas.vue';
 import { useCaptionLayoutStore } from '@/features/captions/use-caption-layout-store';
+import VideoFrameCanvas from '@/features/captions/video-frame-canvas.vue';
 import RecordingExportDialog from '@/features/recording-export/recording-export-dialog.vue';
 import RecordingPicker from '@/features/recordings/recording-picker.vue';
 import { useRecordingCatalogStore } from '@/features/recordings/use-recording-catalog-store';
@@ -26,9 +27,10 @@ import { useRecordingWorkspaceStore } from '@/features/workspace/use-recording-w
 import { EWorkspaceRecordingState } from '@/features/workspace/workspace-recording.model';
 import { isKeyboardEventOwnedByUi } from '@/shared/ui/ui-keyboard-scope';
 
-import { EStudioStatus } from './studio.model';
+import { EStudioStatus, EStudioView } from './studio.model';
 import StudioControls from './studio-controls.vue';
 import StudioStatus from './studio-status.vue';
+import StudioToolbar from './studio-toolbar.vue';
 import { useStudioCommands } from './use-studio-commands';
 import { useStudioRecordingPicker } from './use-studio-recording-picker';
 
@@ -65,8 +67,12 @@ const studioCommands = useStudioCommands({
   blurCaptionInput: () => typingSurface.value?.blur(),
 });
 
-const { layout: captionLayout } = storeToRefs(captionLayoutStore);
-const { isChromaMode } = storeToRefs(studioUiStore);
+const {
+  layout: captionLayout,
+  videoFramePosition,
+  videoFrameLayout,
+} = storeToRefs(captionLayoutStore);
+const { isChromaMode, view } = storeToRefs(studioUiStore);
 const { session, sessionRevision, isRecording, isReplaying } =
   storeToRefs(typingSessionStore);
 const { workspaceRecording, workspaceGeneration, saveAttempt, isSaveInFlight } =
@@ -127,6 +133,14 @@ function handleLiveTypingEvent(event: TTypingEvent) {
   typingSessionStore.handleLiveTypingEvent(event);
 }
 
+function selectStudioView(nextView: EStudioView) {
+  execute(
+    nextView === EStudioView.Workspace
+      ? EAppCommand.SelectWorkspaceView
+      : EAppCommand.SelectVideoFrameView,
+  );
+}
+
 function focusLiveInput() {
   const expectedGeneration = workspaceGeneration.value;
   void nextTick(() => {
@@ -135,14 +149,13 @@ function focusLiveInput() {
       paletteOpen.value ||
       recordingPickerOpen.value ||
       exportDialogOpen.value ||
-      workspaceGeneration.value !== expectedGeneration ||
-      isRecordingPreview.value ||
-      isReplaying.value
+      workspaceGeneration.value !== expectedGeneration
     ) {
       return;
     }
 
-    typingSurface.value?.focus();
+    if (isRecordingPreview.value || isReplaying.value) studio.value?.focus();
+    else typingSurface.value?.focus();
   });
 }
 
@@ -161,11 +174,11 @@ function handleEscape(event: KeyboardEvent) {
     return;
   }
 
-  if (isTypingFocused.value) {
-    typingSurface.value?.blur();
-    event.preventDefault();
-  } else if (isChromaMode.value) {
+  if (isChromaMode.value) {
     execute(EAppCommand.ExitChromaMode);
+    event.preventDefault();
+  } else if (isTypingFocused.value) {
+    typingSurface.value?.blur();
     event.preventDefault();
   }
 }
@@ -205,8 +218,8 @@ onUnmounted(() => {
       v-if="exportDialogOpen && workspaceRecording"
       v-model:open="exportDialogOpen"
       :recording="workspaceRecording.recording"
-      :recording-id="workspaceRecording.id"
-      :layout="captionLayout"
+      :source-label="recordingLabel ?? 'Recording'"
+      :layout="videoFrameLayout"
       @close-focus="
         $event.preventDefault();
         studio?.focus();
@@ -225,7 +238,26 @@ onUnmounted(() => {
       @retry="catalogStore.listRecordings()"
       @close-focus="recordingPicker.handleCloseFocus"
     />
+    <StudioToolbar
+      v-if="!isChromaMode"
+      class="toolbar"
+      :view="view"
+      :can-enter-chroma="getAvailability(EAppCommand.EnterChromaMode).enabled"
+      @select-view="selectStudioView"
+      @enter-chroma="execute(EAppCommand.EnterChromaMode)"
+    />
+    <VideoFrameCanvas
+      v-if="view === EStudioView.VideoFrame"
+      class="video-frame-area"
+      :session="session"
+      :session-revision="sessionRevision"
+      :layout="videoFrameLayout"
+      :show-caret="(!isRecordingPreview && isTypingFocused) || isReplaying"
+      @update:position="videoFramePosition = $event"
+      @finish-positioning="focusLiveInput"
+    />
     <CaptionCanvas
+      v-else
       :key="sessionRevision"
       :committed-captions="session.captions"
       :active-text="session.text"
@@ -264,18 +296,15 @@ onUnmounted(() => {
       :is-saved-recording="isSavedRecording"
       :can-toggle-replay="getAvailability(replayCommand).enabled"
       :can-save="getAvailability(EAppCommand.SaveRecording).enabled"
-      :can-clear-session="getAvailability(EAppCommand.ClearSession).enabled"
       :can-discard-draft="getAvailability(EAppCommand.DiscardDraft).enabled"
-      :can-enter-chroma="getAvailability(EAppCommand.EnterChromaMode).enabled"
+      :can-export="getAvailability(EAppCommand.ExportRecording).enabled"
       :is-saving="isSaveInFlight"
       :is-retry="Boolean(saveAttempt)"
       @toggle-recording="execute(recordingCommand)"
       @toggle-replay="execute(replayCommand)"
-      @enter-chroma="execute(EAppCommand.EnterChromaMode)"
+      @export-recording="execute(EAppCommand.ExportRecording)"
       @save-recording="execute(EAppCommand.SaveRecording)"
-      @clear-session="execute(EAppCommand.ClearSession)"
       @discard-draft="execute(EAppCommand.DiscardDraft)"
-      @close-recording="execute(EAppCommand.NewSession)"
     />
   </div>
 </template>
@@ -283,6 +312,7 @@ onUnmounted(() => {
 <style scoped>
 .studio {
   --chrome-inset: clamp(var(--space-3), 3vw, 28px);
+  --toolbar-clearance: 76px;
   position: relative;
   isolation: isolate;
   width: 100%;
@@ -299,6 +329,20 @@ onUnmounted(() => {
 
 .studio--chroma {
   background: var(--app-chroma-color);
+}
+
+.video-frame-area {
+  position: absolute;
+  inset: 84px var(--chrome-inset);
+  z-index: var(--z-index-2);
+}
+
+.toolbar {
+  position: absolute;
+  top: var(--chrome-inset);
+  left: 50%;
+  z-index: var(--z-index-3);
+  transform: translateX(-50%);
 }
 
 .typing-prompt {
@@ -325,13 +369,16 @@ onUnmounted(() => {
   top: var(--chrome-inset);
   right: var(--chrome-inset);
   z-index: var(--z-index-2);
+  min-height: calc(var(--font-size-xl) * 1.5);
+  max-width: min(320px, calc(50% - 160px - var(--chrome-inset)));
 }
 
 .message {
   position: absolute;
-  inset: var(--chrome-inset) var(--chrome-inset) auto auto;
+  inset: calc(var(--chrome-inset) + var(--toolbar-clearance))
+    var(--chrome-inset) auto auto;
   max-width: min(420px, calc(100% - 2 * var(--chrome-inset)));
-  margin: var(--space-5) 0 0;
+  margin: var(--space-6) 0 0;
   color: var(--app-muted);
   overflow-wrap: anywhere;
 }

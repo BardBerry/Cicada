@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { FolderOpenIcon, RotateCcwIcon } from '@lucide/vue';
+import { FolderOpenIcon } from '@lucide/vue';
 import { open as selectDirectory } from '@tauri-apps/plugin-dialog';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, toRef } from 'vue';
 
 import type { TCaptionLayout } from '@/features/captions/captions.model';
-import { reduceTypingRecording } from '@/features/typing/reduce-typing-recording';
 import type { TTypingRecording } from '@/features/typing/typing-recording.model';
 import UiButton from '@/shared/ui/ui-button.vue';
 import UiDialog from '@/shared/ui/ui-dialog.vue';
@@ -15,13 +14,11 @@ import {
   EExportFrameRate,
   EExportQuality,
   EExportResolution,
-  ERecordingExportPhase,
 } from './recording-export.model';
-import RecordingExportPreview from './recording-export-preview.vue';
 import { useRecordingExportStore } from './use-recording-export-store';
 
 type TProps = {
-  recordingId: string;
+  sourceLabel: string;
   recording: TTypingRecording;
   layout: TCaptionLayout;
 };
@@ -29,21 +26,9 @@ type TProps = {
 const props = defineProps<TProps>();
 const open = defineModel<boolean>('open', { default: false });
 const store = useRecordingExportStore();
-const retryConfiguration =
-  store.phase === ERecordingExportPhase.Failed &&
-  store.failedConfiguration?.sourceId === props.recordingId
-    ? store.failedConfiguration
-    : null;
-const filename = ref(
-  retryConfiguration?.filename ??
-    `cicada-${new Date().toISOString().replace(/[:.]/g, '-')}`,
-);
+const filename = toRef(store.preferences, 'filename');
 const errorMessage = ref<string | null>(null);
 const browsing = ref(false);
-const position = ref({
-  ...(retryConfiguration?.position ?? props.layout.position),
-});
-const session = computed(() => reduceTypingRecording(props.recording));
 const filenameError = computed(() => {
   const stem = filename.value.trim().replace(/\.mp4$/i, '');
   if (!stem) return 'Enter a file name.';
@@ -95,7 +80,7 @@ async function browse() {
     const directory = await selectDirectory({
       directory: true,
       multiple: false,
-      title: 'Export MP4 to',
+      title: 'Export Video to',
       defaultPath: store.preferences.directory || undefined,
     });
     if (typeof directory === 'string') store.preferences.directory = directory;
@@ -116,9 +101,8 @@ function exportRecording() {
     return;
   open.value = false;
   void store.exportRecording({
-    sourceId: props.recordingId,
     recording: props.recording,
-    layout: { ...props.layout, position: { ...position.value } },
+    layout: props.layout,
     settings: { ...store.preferences, filename: filename.value.trim() },
   });
 }
@@ -136,9 +120,9 @@ onMounted(async () => {
   <UiDialog
     v-model:open="open"
     class="recording-export-dialog"
-    style="width: min(960px, calc(100vw - 2 * var(--space-4)))"
-    title="Export MP4"
-    description="H.264 video · No audio"
+    style="width: min(480px, calc(100vw - 2 * var(--space-4)))"
+    title="Export Video"
+    :description="`${props.sourceLabel} · H.264 video · No audio`"
     :dismiss-on-outside="false"
   >
     <form
@@ -146,6 +130,7 @@ onMounted(async () => {
       class="form"
       @submit.prevent="exportRecording"
     >
+      <p class="note">Exports the Video Frame layout.</p>
       <div class="settings">
         <label class="field">
           <span>Resolution</span>
@@ -228,29 +213,6 @@ onMounted(async () => {
           </div>
         </div>
       </div>
-      <section class="preview" aria-labelledby="export-preview-title">
-        <header class="preview-heading">
-          <h3 id="export-preview-title" class="preview-title">Preview</h3>
-          <span class="aspect-ratio" aria-label="Output aspect ratio: 16:9"
-            >16:9</span
-          >
-        </header>
-        <RecordingExportPreview
-          v-model:position="position"
-          :session="session"
-          :layout="props.layout"
-        />
-        <div class="preview-caption">
-          <span>Drag or use arrow keys to position captions.</span>
-          <UiButton
-            size="icon"
-            :icon="RotateCcwIcon"
-            aria-label="Reset position"
-            title="Reset position"
-            @click="position = { ...props.layout.position }"
-          />
-        </div>
-      </section>
       <p v-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
     </form>
     <template #actions>
@@ -276,40 +238,10 @@ onMounted(async () => {
 <style scoped>
 .form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
   gap: var(--space-5);
   padding-top: var(--space-5);
   border-top: 1px solid var(--app-border);
-}
-.preview {
-  display: grid;
-  min-width: 0;
-  align-content: start;
-  gap: var(--space-3);
-}
-.preview-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-.preview-title {
-  margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-}
-.aspect-ratio {
-  color: var(--app-muted);
-  font-size: var(--font-size-sm);
-}
-.preview-caption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  color: var(--app-muted);
-  font-size: var(--font-size-sm);
 }
 .settings {
   display: grid;
@@ -374,10 +306,5 @@ onMounted(async () => {
 }
 .cancel {
   border: 1px solid var(--app-border);
-}
-@media (max-width: 800px) {
-  .form {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 </style>

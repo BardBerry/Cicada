@@ -40,7 +40,7 @@ const label = computed(() => {
     role="status"
   >
     <span class="dot" aria-hidden="true"></span>
-    {{ label }}
+    <span class="label" :title="label">{{ label }}</span>
   </div>
 </template>
 
@@ -61,6 +61,13 @@ const label = computed(() => {
   flex-shrink: 0;
   border-radius: var(--radius-full);
   background: var(--app-live);
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .studio-status--recording .dot {

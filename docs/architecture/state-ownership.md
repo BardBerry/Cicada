@@ -334,16 +334,42 @@ Chroma / output rendering
 ## MP4 Export
 
 The Recording Export Store owns the single background export, its progress,
-session-only video preferences and directory, and failed filename/placement for
-the same recording's next attempt. Studio owns whether its settings dialog is
-open; the dialog owns export placement independently of Studio's caption layout.
+and session-only output settings, including the unfinished filename and directory.
+Closing the dialog retains those settings, and a failed export does not replace
+them with an older attempt. Success generates a fresh filename unless the user
+has already edited it. Studio owns whether its settings dialog is open and labels
+the current draft or saved source. Every Export entry point selects Video Frame
+and opens this same output-settings dialog in one action; cancellation leaves that
+view selected. No separate static preview is rendered in the dialog.
+
+Studio UI owns the selected Workspace/Video Frame view for the application session.
+Navigation preserves it; restarting defaults to Workspace. Chroma is a separate
+presentation flag, available only in Workspace and cleared on Studio departure.
+The Caption Layout Store owns Workspace layout, Video Frame position, and the
+derived Video Frame layout. Video Frame position is a global preference persisted under
+`cicada.video-frame-position` in localStorage. Coordinates are validated as finite
+numbers in `[0, 1]` on load, with a centered default when missing or invalid.
+Recording replacement, capture, saving, discarding, and navigation never reset it.
+Workspace position remains independent. The effective export layout copies shared
+caption configuration with Video Frame position substituted, without mutating
+the original layout or recording format.
 Progress listeners follow the export operation and are removed on success or failure.
 
 The experimental macOS exporter renders a fixed 1920x1080 logical WebView and
 varies native snapshot bitmap dimensions. Caption dimensions, wrapping, Motion
 geometry, and the controlled animation clock are not scaled for output resolution.
-The dialog uses the same CaptionCanvas with layout projection disabled for a
-static, display-scaled preview. Native 4K detail is verified on a 2x Retina display;
+VideoFrameCanvas teleports the same live CaptionCanvas into a fixed-size same-origin
+iframe, then scales that document for display. This keeps Motion measurements
+unscaled; a scaled Motion ancestor failed shared-layout projection and CSS zoom
+changed text geometry in WKWebView. The iframe reuses compiled application styles
+and the caption theme. Its animation-update callback selects Motion's JS clock
+to avoid mixing the main document clock with the iframe's WAAPI timeline. Neither
+Workspace nor the native renderer's appearance or timing is changed. The frame
+and top toolbar are centered on the full Studio viewport; floating panels do not
+participate in their geometry. The iframe renderer owns its ResizeObserver and
+asynchronous stylesheet/font initialization; teardown prevents late Teleport setup.
+The application and exporter share the chroma color token from `tokens.css`.
+Native 4K detail is verified on a 2x Retina display;
 equivalent detail on a 1x display remains unverified. This is a backing-density
 verification limit, not a declared physical monitor-resolution limit.
 

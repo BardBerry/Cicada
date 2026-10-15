@@ -17,6 +17,7 @@ import { useRecordingWorkspaceStore } from '@/features/workspace/use-recording-w
 import { EWorkspaceRecordingState } from '@/features/workspace/workspace-recording.model';
 import { CURRENT_PLATFORM, EPlatform } from '@/shared/platform/platform';
 
+import { EStudioView } from './studio.model';
 import { useStudioRecordingWorkflowStore } from './use-studio-recording-workflow-store';
 
 const STUDIO_COMMANDS = [
@@ -36,6 +37,9 @@ const STUDIO_COMMANDS = [
   EAppCommand.EnterChromaMode,
   EAppCommand.ExitChromaMode,
   EAppCommand.ToggleChromaMode,
+  EAppCommand.SelectWorkspaceView,
+  EAppCommand.SelectVideoFrameView,
+  EAppCommand.ToggleStudioView,
   EAppCommand.FocusCaptionInput,
   EAppCommand.BlurCaptionInput,
 ] as const;
@@ -69,6 +73,7 @@ export function useStudioCommands(
     | EAppCommand.ToggleRecording
     | EAppCommand.ToggleReplay
     | EAppCommand.ToggleChromaMode
+    | EAppCommand.ToggleStudioView
   > {
     switch (command) {
       case EAppCommand.ToggleRecording:
@@ -83,6 +88,10 @@ export function useStudioCommands(
         return studioUiStore.isChromaMode
           ? EAppCommand.ExitChromaMode
           : EAppCommand.EnterChromaMode;
+      case EAppCommand.ToggleStudioView:
+        return studioUiStore.view === EStudioView.VideoFrame
+          ? EAppCommand.SelectWorkspaceView
+          : EAppCommand.SelectVideoFrameView;
       default:
         return command;
     }
@@ -95,6 +104,7 @@ export function useStudioCommands(
       EAppCommand.ToggleRecording,
       EAppCommand.ToggleReplay,
       EAppCommand.ToggleChromaMode,
+      EAppCommand.ToggleStudioView,
     ] as const) {
       if (resolveOperation(toggle) === command) return toggle;
     }
@@ -129,6 +139,9 @@ export function useStudioCommands(
     const isReplaying = typingSessionStore.isReplaying;
 
     switch (command) {
+      case EAppCommand.SelectWorkspaceView:
+      case EAppCommand.SelectVideoFrameView:
+        return ECommandRelevance.Contextual;
       case EAppCommand.ExportRecording:
         return CURRENT_PLATFORM === EPlatform.MacOS
           ? ECommandRelevance.Contextual
@@ -203,6 +216,9 @@ export function useStudioCommands(
     const content = workspaceStore.workspaceRecording;
 
     switch (command) {
+      case EAppCommand.SelectWorkspaceView:
+      case EAppCommand.SelectVideoFrameView:
+        return { enabled: true };
       case EAppCommand.ExportRecording:
         if (CURRENT_PLATFORM !== EPlatform.MacOS)
           return {
@@ -379,6 +395,8 @@ export function useStudioCommands(
           ? { enabled: true }
           : { enabled: false, disabledReason: 'No replay in progress' };
       case EAppCommand.EnterChromaMode:
+        if (studioUiStore.view !== EStudioView.Workspace)
+          return { enabled: false, disabledReason: 'Available in Workspace.' };
         return studioUiStore.isChromaMode
           ? { enabled: false, disabledReason: 'Already in Chroma mode' }
           : { enabled: true };
@@ -444,12 +462,23 @@ export function useStudioCommands(
 
   // Internal delegate: the application dispatcher checks this owner's availability.
   function execute(command: TStudioCommand): boolean {
-    switch (resolveOperation(command)) {
+    const operation = resolveOperation(command);
+    switch (operation) {
       case EAppCommand.ExportRecording: {
         if (!workspaceStore.workspaceRecording) return false;
+        studioUiStore.selectView(EStudioView.VideoFrame);
         ui.openExportDialog();
         return true;
       }
+      case EAppCommand.SelectWorkspaceView:
+      case EAppCommand.SelectVideoFrameView:
+        studioUiStore.selectView(
+          operation === EAppCommand.SelectWorkspaceView
+            ? EStudioView.Workspace
+            : EStudioView.VideoFrame,
+        );
+        ui.focusLiveInput();
+        return true;
       case EAppCommand.OpenRecording:
         ui.openRecordingPicker();
         return true;
@@ -517,6 +546,7 @@ export function useStudioCommands(
         return true;
       case EAppCommand.ExitChromaMode:
         studioUiStore.exitChromaMode();
+        ui.focusLiveInput();
         return true;
       case EAppCommand.FocusCaptionInput:
         ui.focusCaptionInput();
