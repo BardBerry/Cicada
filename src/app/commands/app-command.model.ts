@@ -25,6 +25,9 @@ export enum EAppCommand {
   EnterChromaMode = 'studio.enter-chroma',
   ExitChromaMode = 'studio.exit-chroma',
   ToggleChromaMode = 'studio.toggle-chroma',
+  SelectWorkspaceView = 'studio.workspace-view',
+  SelectVideoFrameView = 'studio.video-frame-view',
+  ToggleStudioView = 'studio.toggle-view',
 
   FocusCaptionInput = 'caption-input.focus',
   BlurCaptionInput = 'caption-input.blur',

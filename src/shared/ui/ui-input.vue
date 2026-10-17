@@ -3,10 +3,12 @@ import { useTemplateRef } from 'vue';
 
 type TProps = {
   type?: 'text' | 'search';
+  controlSize?: 'sm' | 'md';
 };
 
 const props = withDefaults(defineProps<TProps>(), {
   type: 'text',
+  controlSize: 'md',
 });
 const model = defineModel<string>({ default: '' });
 const input = useTemplateRef('input');
@@ -19,7 +21,13 @@ defineExpose({ focus });
 </script>
 
 <template>
-  <input ref="input" v-model="model" class="ui-input" :type="props.type" />
+  <input
+    ref="input"
+    v-model="model"
+    class="ui-input"
+    :class="{ 'ui-input--control-sm': props.controlSize === 'sm' }"
+    :type="props.type"
+  />
 </template>
 
 <style scoped>
@@ -37,6 +45,11 @@ defineExpose({ focus });
 .ui-input:focus-visible {
   outline: 2px solid var(--app-accent);
   outline-offset: 1px;
+}
+
+.ui-input--control-sm {
+  min-height: var(--control-size-sm);
+  padding-block: var(--space-1);
 }
 
 .ui-input:disabled {

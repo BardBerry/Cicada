@@ -86,6 +86,6 @@ onMounted(async () => {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #00ff00;
+  background: var(--app-chroma-color);
 }
 </style>

@@ -26,9 +26,18 @@ type TProps = {
   options: { value: string; label: string }[];
   disabled?: boolean;
   placeholder?: string;
+  controlSize?: 'sm' | 'md';
 };
 
-const props = defineProps<TProps>();
+const props = withDefaults(defineProps<TProps>(), {
+  id: undefined,
+  ariaLabel: undefined,
+  ariaLabelledby: undefined,
+  ariaDescribedby: undefined,
+  disabled: false,
+  placeholder: undefined,
+  controlSize: 'md',
+});
 const model = defineModel<string>({ default: '' });
 const layerStyle = useUiOverlayLayer();
 
@@ -41,6 +50,7 @@ function handleEscape(event: KeyboardEvent) {
   <SelectRoot v-model="model" :disabled="props.disabled">
     <SelectTrigger
       class="ui-select"
+      :class="{ 'ui-select--control-sm': props.controlSize === 'sm' }"
       v-bind="{
         ...$attrs,
         ...UI_LOCAL_KEYBOARD_SCOPE_ATTRS,
@@ -72,6 +82,7 @@ function handleEscape(event: KeyboardEvent) {
               v-for="option in props.options"
               :key="option.value"
               class="item"
+              :class="{ 'item--control-sm': props.controlSize === 'sm' }"
               :value="option.value"
             >
               <SelectItemText>{{ option.label }}</SelectItemText>
@@ -106,6 +117,11 @@ function handleEscape(event: KeyboardEvent) {
 .ui-select:focus-visible {
   outline: 2px solid var(--app-accent);
   outline-offset: 1px;
+}
+
+.ui-select--control-sm {
+  min-height: var(--control-size-sm);
+  padding-block: var(--space-1);
 }
 
 .ui-select:disabled {
@@ -154,11 +170,17 @@ function handleEscape(event: KeyboardEvent) {
   position: relative;
   display: flex;
   align-items: center;
+  min-height: var(--control-size-md);
   padding: var(--space-2) calc(var(--space-3) + 16px + var(--space-2))
     var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   outline: none;
   cursor: default;
+}
+
+.item--control-sm {
+  min-height: var(--control-size-sm);
+  padding-block: var(--space-1);
 }
 
 .item[data-highlighted] {

@@ -11,7 +11,7 @@ import {
   RotateCcwIcon,
   SaveIcon,
   Settings2Icon,
-  SquareArrowRightExit,
+  SquareArrowRightEnterIcon,
   SquareIcon,
 } from '@lucide/vue';
 
@@ -23,9 +23,23 @@ import {
 
 export const COMMAND_DEFINITIONS: readonly TCommandDefinition[] = [
   {
+    id: EAppCommand.SelectWorkspaceView,
+    label: 'Workspace Mode',
+    icon: PanelsTopLeftIcon,
+    group: EAppCommandGroup.App,
+    keywords: ['workspace', 'view', 'canvas', 'typing'],
+  },
+  {
+    id: EAppCommand.SelectVideoFrameView,
+    label: 'Video Frame Mode',
+    icon: PanelsTopLeftIcon,
+    group: EAppCommandGroup.App,
+    keywords: ['video', 'frame', 'view', 'composition', 'canvas'],
+  },
+  {
     id: EAppCommand.ExportRecording,
-    label: 'Export MP4',
-    icon: SquareArrowRightExit,
+    label: 'Export Video',
+    icon: SquareArrowRightEnterIcon,
     group: EAppCommandGroup.Recording,
     keywords: ['export', 'video', 'mp4', 'render'],
   },

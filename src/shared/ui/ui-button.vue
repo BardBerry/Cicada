@@ -7,6 +7,7 @@ export type TUiButtonSize = 'standard' | 'icon';
 type TProps = {
   variant?: TUiButtonVariant;
   size?: TUiButtonSize;
+  controlSize?: 'sm' | 'md';
   type?: 'button' | 'submit' | 'reset';
   icon?: Component;
 };
@@ -14,6 +15,7 @@ type TProps = {
 const props = withDefaults(defineProps<TProps>(), {
   variant: 'secondary',
   size: 'standard',
+  controlSize: 'md',
   type: 'button',
   icon: undefined,
 });
@@ -23,7 +25,11 @@ const props = withDefaults(defineProps<TProps>(), {
   <button
     :type="props.type"
     class="ui-button"
-    :class="[`ui-button--${props.variant}`, `ui-button--size-${props.size}`]"
+    :class="[
+      `ui-button--${props.variant}`,
+      `ui-button--size-${props.size}`,
+      `ui-button--control-${props.controlSize}`,
+    ]"
   >
     <component
       :is="props.icon"
@@ -39,11 +45,13 @@ const props = withDefaults(defineProps<TProps>(), {
 
 <style scoped>
 .ui-button {
+  --ui-button-control-size: var(--control-size-md);
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: var(--control-size-md);
+  min-height: var(--ui-button-control-size);
   padding: var(--space-3) var(--space-4);
   color: var(--app-text);
   border: 0;
@@ -74,9 +82,14 @@ const props = withDefaults(defineProps<TProps>(), {
   );
 }
 
+.ui-button--control-sm {
+  --ui-button-control-size: var(--control-size-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
 .ui-button--size-icon {
-  width: var(--control-size-md);
-  height: var(--control-size-md);
+  width: var(--ui-button-control-size);
+  height: var(--ui-button-control-size);
   padding: var(--space-2);
 }
 

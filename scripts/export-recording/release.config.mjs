@@ -16,7 +16,11 @@ export default defineConfig(async (environment) => {
       rolldownOptions: {
         input: {
           verification: fileURLToPath(
-            new URL('./native-verification.ts', import.meta.url),
+            new URL(
+              process.env.CICADA_EXPORT_VERIFY_ENTRY ||
+                './native-verification.ts',
+              import.meta.url,
+            ),
           ),
         },
       },

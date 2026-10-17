@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { nextTick } from 'vue';
 
 import { router } from '../../src/app/router/router';
+import { useStudioUiStore } from '../../src/app/use-studio-ui-store';
 import { useCaptionLayoutStore } from '../../src/features/captions/use-caption-layout-store';
 import {
   EExportFrameRate,
@@ -15,6 +16,7 @@ import { useRecordingCatalogStore } from '../../src/features/recordings/use-reco
 import { useTypingSessionStore } from '../../src/features/typing/use-typing-session-store';
 import { useRecordingWorkspaceStore } from '../../src/features/workspace/use-recording-workspace-store';
 import { EWorkspaceRecordingState } from '../../src/features/workspace/workspace-recording.model';
+import { EStudioView } from '../../src/pages/studio/studio.model';
 
 async function waitFor<T>(
   read: () => T,
@@ -57,6 +59,11 @@ async function command(id: string, search: string) {
     row.hasAttribute('data-disabled')
   )
     throw new Error(`Disabled: ${id}`);
+  if (
+    id === 'recording.export' &&
+    row.querySelector('.label')?.textContent !== 'Export Video'
+  )
+    throw new Error(`Unexpected export label: ${row.textContent}`);
   row.click();
   await waitFor(
     () => !document.querySelector('.command-palette'),
@@ -64,7 +71,7 @@ async function command(id: string, search: string) {
   );
 }
 async function openExport() {
-  await command('recording.export', 'Export MP4');
+  await command('recording.export', 'Export Video');
   const dialog = await waitFor(
     () => document.querySelector<HTMLElement>('.recording-export-dialog'),
     'dialog',
@@ -74,11 +81,19 @@ async function openExport() {
     'default directory',
   );
   await waitFor(() => {
-    const composition = dialog.querySelector<HTMLElement>('.composition');
-    return composition && composition.getBoundingClientRect().width > 0;
+    const composition =
+      document.querySelector<HTMLIFrameElement>('.composition');
+    return composition?.style.visibility === 'visible';
   }, 'preview scale');
   if (useRecordingExportStore().isExporting)
     throw new Error('Opening dialog started export');
+  if (useStudioUiStore().view !== EStudioView.VideoFrame)
+    throw new Error('Single export command did not select Video Frame');
+  if (
+    dialog.hasAttribute('aria-describedby') ||
+    dialog.textContent?.includes('Exports the Video Frame layout.')
+  )
+    throw new Error('Removed export descriptions remain');
   return dialog;
 }
 function submit() {
@@ -88,8 +103,10 @@ function submit() {
     )!
     .click();
 }
-function previewMetrics(dialog: HTMLElement) {
-  const composition = dialog.querySelector<HTMLElement>('.composition')!;
+function previewMetrics() {
+  const composition =
+    document.querySelector<HTMLIFrameElement>('.composition')!.contentDocument!
+      .body;
   const bounds = composition.getBoundingClientRect();
   const scale = bounds.width / 1920;
   return [...composition.querySelectorAll<HTMLElement>('.item')].map((item) => {
@@ -137,6 +154,7 @@ try {
   const typing = useTypingSessionStore();
   const exporter = useRecordingExportStore();
   const captions = useCaptionLayoutStore();
+  const ui = useStudioUiStore();
   const loaded = await catalog.loadRecording(
     '1fc0c0e1-8198-4995-9ec2-fe6ed9e5e97d',
   );
@@ -166,6 +184,13 @@ try {
     ({ payload }) => progress.push(payload),
   );
   let dialog = await openExport();
+  const unfinishedFilename = `workflow-${Date.now()}-unfinished`;
+  const unfinishedField = dialog.querySelector<HTMLInputElement>(
+    '[aria-label="File name"]',
+  )!;
+  unfinishedField.value = unfinishedFilename;
+  unfinishedField.dispatchEvent(new Event('input', { bubbles: true }));
+  await nextTick();
   // Exercise Reka's actual popover and keyboard selection in the native WebView.
   key(
     dialog.querySelector<HTMLElement>('[aria-label="Resolution"]')!,
@@ -183,14 +208,6 @@ try {
     () => exporter.preferences.resolution === EExportResolution.HD,
     'resolution selection',
   );
-  const preview = dialog.querySelector<HTMLElement>(
-    '.recording-export-preview',
-  )!;
-  key(preview, 'ArrowRight');
-  key(preview, 'ArrowDown');
-  await nextTick();
-  if (JSON.stringify(captions.layout) !== originalLayout)
-    throw new Error('Placement mutated Studio');
   [...dialog.querySelectorAll<HTMLButtonElement>('button')]
     .find((button) => button.textContent?.trim() === 'Cancel')!
     .click();
@@ -204,15 +221,50 @@ try {
   )
     throw new Error('Cancel mutated Workspace or exported');
   results.dialogCancelUnchanged = true;
-  results.settingsRemembered =
-    exporter.preferences.resolution === EExportResolution.HD;
-  exporter.preferences.resolution = EExportResolution.FullHD;
+  const preview = document.querySelector<HTMLElement>('.frame > .anchor')!;
+  preview.focus();
+  key(preview, 'ArrowRight');
+  key(preview, 'ArrowDown');
+  key(preview, 'Enter');
+  await nextTick();
+  if (JSON.stringify(captions.layout) !== originalLayout)
+    throw new Error('Placement mutated Workspace');
+  if (
+    exporter.preferences.resolution !== EExportResolution.HD ||
+    exporter.preferences.filename !== unfinishedFilename
+  )
+    throw new Error('Cancel lost resolution or unfinished filename');
+  const retainedPreferences = JSON.stringify(exporter.preferences);
+  let retainedPosition = JSON.stringify(captions.videoFramePosition);
+  await router.push('/settings');
+  await router.push('/');
+  if (
+    ui.view !== EStudioView.VideoFrame ||
+    JSON.stringify(captions.videoFramePosition) !== retainedPosition ||
+    JSON.stringify(exporter.preferences) !== retainedPreferences
+  )
+    throw new Error('Navigation lost view, position or settings');
   dialog = await openExport();
-  const frame = dialog.querySelector<HTMLElement>('.recording-export-preview')!;
+  if (
+    dialog.querySelector<HTMLInputElement>('[aria-label="File name"]')!
+      .value !== unfinishedFilename ||
+    JSON.stringify(exporter.preferences) !== retainedPreferences
+  )
+    throw new Error('Reopen lost unfinished settings');
+  results.settingsRemembered = true;
+  exporter.preferences.resolution = EExportResolution.FullHD;
+  dialog.querySelector<HTMLButtonElement>('.cancel')!.click();
+  await waitFor(
+    () => !document.querySelector('.recording-export-dialog'),
+    'close before positioning',
+  );
+  const frame = document.querySelector<HTMLElement>('.frame > .anchor')!;
   // Synthetic pointer events need capture bypassed; real pointer capture is native.
   const capture = frame.setPointerCapture;
   frame.setPointerCapture = () => {};
-  const frameRect = frame.getBoundingClientRect();
+  const frameRect = document
+    .querySelector<HTMLElement>('.frame')!
+    .getBoundingClientRect();
   frame.dispatchEvent(
     new PointerEvent('pointerdown', {
       pointerId: 1,
@@ -235,8 +287,10 @@ try {
   );
   frame.setPointerCapture = capture;
   await nextTick();
-  const metrics = previewMetrics(dialog);
+  const metrics = previewMetrics();
+  retainedPosition = JSON.stringify(captions.videoFramePosition);
   results.previewMetrics = metrics;
+  dialog = await openExport();
   const filename = dialog.querySelector<HTMLInputElement>(
     '[aria-label="File name"]',
   )!;
@@ -256,6 +310,7 @@ try {
   filename.value = `workflow-${Date.now()}-saved`;
   filename.dispatchEvent(new Event('input', { bubbles: true }));
   await nextTick();
+  const submittedPreferences = JSON.stringify(exporter.preferences);
   submit();
   await waitFor(
     () => !document.querySelector('.recording-export-dialog'),
@@ -280,16 +335,17 @@ try {
       JSON.stringify(workspace.workspaceRecording) === original;
     const retry = await openExport();
     if (
+      JSON.stringify(exporter.preferences) !== submittedPreferences ||
       retry.querySelector<HTMLInputElement>('[aria-label="File name"]')!
         .value !== filename.value ||
-      previewMetrics(retry).some((item, index) =>
+      previewMetrics().some((item, index) =>
         item.rect.some(
           (value, axis) => Math.abs(value - metrics[index].rect[axis]) > 0.01,
         ),
       )
     )
       throw new Error('Failed filename/placement not retained for retry');
-    results.failedConfigurationRetained = true;
+    results.unfinishedPreferencesRetainedAfterFailure = true;
   } else {
     await waitFor(() => exporter.isExporting, 'background admission');
     await router.push('/settings');
@@ -304,6 +360,10 @@ try {
     )
       throw new Error(exporter.errorMessage ?? 'No saved output');
     results.savedPath = exporter.lastExportPath;
+    if (exporter.preferences.filename === filename.value)
+      throw new Error(
+        'Successful export did not regenerate unchanged filename',
+      );
     results.savedSummary = summaries[0];
     const actual = summaries[0].layoutMetrics.items;
     if (
@@ -326,6 +386,11 @@ try {
       throw new Error('Saved export mutated Workspace/layout');
     results.navigationAndWorkspaceUnchanged = true;
     await router.push('/');
+    if (
+      ui.view !== EStudioView.VideoFrame ||
+      JSON.stringify(captions.videoFramePosition) !== retainedPosition
+    )
+      throw new Error('Background export/navigation reset view or placement');
     await command('replay.start', 'Replay Recording');
     const startTime = performance.now();
     const short = {
@@ -340,16 +405,23 @@ try {
       fps: EExportFrameRate.FPS60,
       filename: `workflow-${Date.now()}-repeat`,
     };
-    const repeated = await exporter.exportRecording({
+    exporter.preferences.filename = settings.filename;
+    const repeatedExport = exporter.exportRecording({
       recording: short,
-      layout: captions.layout,
+      layout: captions.videoFrameLayout,
       settings,
     });
+    const newerFilename = `workflow-${Date.now()}-next-unfinished`;
+    exporter.preferences.filename = newerFilename;
+    const repeated = await repeatedExport;
     if (!repeated || !typing.isReplaying || performance.now() - startTime < 100)
       throw new Error(
         exporter.errorMessage ?? 'Replay/export isolation failed',
       );
     results.repeatPath = repeated;
+    if (exporter.preferences.filename !== newerFilename)
+      throw new Error('Successful export overwrote newer unfinished filename');
+    results.newerFilenameRetained = true;
     results.replayUnaffected = true;
     await command('replay.stop', 'Stop Replay');
     await exporter.exportRecording({
@@ -395,7 +467,7 @@ try {
     exporter.preferences.fps = EExportFrameRate.FPS30;
     exporter.preferences.quality = EExportQuality.Maximum;
     dialog = await openExport();
-    const draftMetrics = previewMetrics(dialog);
+    const draftMetrics = previewMetrics();
     submit();
     await waitFor(() => !exporter.isExporting, 'draft completion');
     if (

@@ -1,6 +1,6 @@
-export enum EStudioMode {
-  Studio = 'studio',
-  Chroma = 'chroma',
+export enum EStudioView {
+  Workspace = 'workspace',
+  VideoFrame = 'video-frame',
 }
 
 export enum EStudioStatus {

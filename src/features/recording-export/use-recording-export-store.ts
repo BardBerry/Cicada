@@ -3,8 +3,6 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { defineStore } from 'pinia';
 import { computed, reactive, ref } from 'vue';
 
-import type { TCaptionPosition } from '@/features/captions/captions.model';
-
 import {
   EExportFrameRate,
   EExportQuality,
@@ -17,7 +15,11 @@ import {
 type TExportRecordingParams = Pick<
   TRecordingExportInput,
   'recording' | 'layout' | 'settings'
-> & { sourceId?: string };
+>;
+
+function createFilename() {
+  return `cicada-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+}
 
 export const useRecordingExportStore = defineStore('recording-export', () => {
   const phase = ref<ERecordingExportPhase>(ERecordingExportPhase.Idle);
@@ -30,18 +32,12 @@ export const useRecordingExportStore = defineStore('recording-export', () => {
   const totalFrames = ref(0);
   const errorMessage = ref<string | null>(null);
   const lastExportPath = ref<string | null>(null);
-  const failedConfiguration = ref<{
-    sourceId: string;
-    filename: string;
-    position: TCaptionPosition;
-  } | null>(null);
-  const preferences = reactive<
-    Omit<TRecordingExportInput['settings'], 'filename'>
-  >({
+  const preferences = reactive<TRecordingExportInput['settings']>({
     resolution: EExportResolution.FullHD,
     fps: EExportFrameRate.FPS30,
     quality: EExportQuality.High,
     directory: '',
+    filename: createFilename(),
   });
 
   async function initializeDirectory() {
@@ -56,7 +52,6 @@ export const useRecordingExportStore = defineStore('recording-export', () => {
     recording,
     layout,
     settings,
-    sourceId,
   }: TExportRecordingParams): Promise<string | null> {
     if (isExporting.value) return null;
     phase.value = ERecordingExportPhase.Rendering;
@@ -65,13 +60,6 @@ export const useRecordingExportStore = defineStore('recording-export', () => {
     errorMessage.value = null;
     lastExportPath.value = null;
     let unlisten: UnlistenFn | undefined;
-    const configuration = sourceId
-      ? {
-          sourceId,
-          filename: settings.filename,
-          position: { ...layout.position },
-        }
-      : null;
     try {
       // Own the request before awaiting; export must not follow later Workspace
       // replacement, replay changes, or mutable appearance settings.
@@ -97,14 +85,14 @@ export const useRecordingExportStore = defineStore('recording-export', () => {
       );
       const path = await invoke<string>('export_recording', snapshot);
       lastExportPath.value = path;
-      failedConfiguration.value = null;
+      if (preferences.filename.trim() === settings.filename)
+        preferences.filename = createFilename();
       completedFrames.value = totalFrames.value;
       phase.value = ERecordingExportPhase.Complete;
       return path;
     } catch (error) {
       errorMessage.value = `Unable to export MP4: ${error instanceof Error ? error.message : String(error)}`;
       phase.value = ERecordingExportPhase.Failed;
-      failedConfiguration.value = configuration;
       completedFrames.value = 0;
       totalFrames.value = 0;
       return null;
@@ -120,7 +108,6 @@ export const useRecordingExportStore = defineStore('recording-export', () => {
     totalFrames,
     errorMessage,
     lastExportPath,
-    failedConfiguration,
     preferences,
     initializeDirectory,
     exportRecording,

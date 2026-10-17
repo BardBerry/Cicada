@@ -1,23 +1,30 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 
-import { EStudioMode } from '../pages/studio/studio.model';
+import { EStudioView } from '../pages/studio/studio.model';
 
 export const useStudioUiStore = defineStore('studio-ui', () => {
-  const studioMode = ref<EStudioMode>(EStudioMode.Studio);
-  const isChromaMode = computed(() => studioMode.value === EStudioMode.Chroma);
+  const view = ref(EStudioView.Workspace);
+  const isChromaMode = ref(false);
+
+  function selectView(nextView: EStudioView) {
+    isChromaMode.value = false;
+    view.value = nextView;
+  }
 
   function exitChromaMode() {
-    studioMode.value = EStudioMode.Studio;
+    isChromaMode.value = false;
   }
 
   function enterChromaMode() {
-    studioMode.value = EStudioMode.Chroma;
+    if (view.value !== EStudioView.Workspace) return;
+    isChromaMode.value = true;
   }
 
   return {
-    studioMode,
     isChromaMode,
+    view,
+    selectView,
     exitChromaMode,
     enterChromaMode,
   };
