@@ -89,10 +89,10 @@ async function reveal() {
 <style scoped>
 .recording-export-status {
   position: absolute;
-  right: var(--space-4);
-  bottom: var(--space-4);
+  right: var(--shell-inset);
+  bottom: var(--shell-inset);
   z-index: var(--z-index-2);
-  width: min(340px, calc(100% - 2 * var(--space-4)));
+  width: min(340px, calc(100% - 2 * var(--shell-inset)));
   padding: var(--space-3);
   background: var(--app-background);
   color: var(--app-text);

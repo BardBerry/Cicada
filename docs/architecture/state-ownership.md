@@ -337,8 +337,8 @@ The Recording Export Store owns the single background export, its progress,
 and session-only output settings, including the unfinished filename and directory.
 Closing the dialog retains those settings, and a failed export does not replace
 them with an older attempt. Success generates a fresh filename unless the user
-has already edited it. Studio owns whether its settings dialog is open and labels
-the current draft or saved source. Every Export entry point selects Video Frame
+has already edited it. Studio owns whether its title-only settings dialog is open;
+the Studio status identifies the current draft or saved source. Every Export entry point selects Video Frame
 and opens this same output-settings dialog in one action; cancellation leaves that
 view selected. No separate static preview is rendered in the dialog.
 

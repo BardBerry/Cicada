@@ -223,7 +223,7 @@ onBeforeUnmount(() => {
   position: relative;
   overflow: hidden;
   background: rgb(0 0 0 / 10%);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
 }
 
 .composition {

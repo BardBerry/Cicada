@@ -19,6 +19,7 @@ const emit = defineEmits<{
   <div class="studio-toolbar" role="group" aria-label="Studio views">
     <div class="segments" role="group" aria-label="Studio view">
       <UiButton
+        control-size="sm"
         class="segment"
         :class="{ 'segment--selected': props.view === EStudioView.Workspace }"
         :aria-pressed="props.view === EStudioView.Workspace"
@@ -26,6 +27,7 @@ const emit = defineEmits<{
         >Workspace</UiButton
       >
       <UiButton
+        control-size="sm"
         class="segment"
         :class="{ 'segment--selected': props.view === EStudioView.VideoFrame }"
         :aria-pressed="props.view === EStudioView.VideoFrame"
@@ -35,6 +37,7 @@ const emit = defineEmits<{
     </div>
     <span class="divider" aria-hidden="true"></span>
     <UiButton
+      control-size="sm"
       class="chroma"
       :aria-disabled="!props.canEnterChroma"
       @click="props.canEnterChroma && emit('enterChroma')"
@@ -60,13 +63,8 @@ const emit = defineEmits<{
 .segments {
   display: flex;
   background: var(--app-surface-raised);
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   padding: var(--space-1);
-}
-
-.segment {
-  min-height: var(--control-size-sm);
-  padding: var(--space-2) var(--space-3);
 }
 
 .segment--selected {
@@ -82,8 +80,6 @@ const emit = defineEmits<{
 
 .chroma {
   --ui-button-secondary-hover-background: transparent;
-  min-height: var(--control-size-sm);
-  padding: var(--space-2) var(--space-3);
 }
 
 .chroma[aria-disabled='true'] {

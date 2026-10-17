@@ -3,7 +3,6 @@ import { XIcon } from '@lucide/vue';
 import {
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogOverlay,
   DialogPortal,
   DialogRoot,
@@ -12,7 +11,6 @@ import {
   VisuallyHidden,
 } from 'reka-ui';
 
-import UiButton from './ui-button.vue';
 import { UI_LOCAL_KEYBOARD_SCOPE_ATTRS } from './ui-keyboard-scope';
 import { useUiOverlayLayer } from './use-ui-overlay-layer';
 
@@ -23,7 +21,6 @@ type TProps = {
   heading?: boolean;
   position?: 'center' | 'top';
   padded?: boolean;
-  description?: string;
   dismissible?: boolean;
   dismissOnOutside?: boolean;
 };
@@ -32,7 +29,6 @@ const props = withDefaults(defineProps<TProps>(), {
   heading: true,
   position: 'center',
   padded: true,
-  description: undefined,
   dismissible: true,
   dismissOnOutside: true,
 });
@@ -81,7 +77,7 @@ function handleOutside(event: Event) {
         v-bind="{
           ...$attrs,
           ...UI_LOCAL_KEYBOARD_SCOPE_ATTRS,
-          ...(props.description ? {} : { 'aria-describedby': undefined }),
+          'aria-describedby': undefined,
         }"
         @escape-key-down="handleEscape"
         @pointer-down-outside="handleOutside"
@@ -89,28 +85,20 @@ function handleOutside(event: Event) {
         @close-auto-focus="emit('closeFocus', $event)"
       >
         <header v-if="props.heading" class="header">
-          <div class="heading">
-            <DialogTitle class="title">{{ props.title }}</DialogTitle>
-            <DialogDescription v-if="props.description" class="description">
-              {{ props.description }}
-            </DialogDescription>
-          </div>
+          <DialogTitle class="title">{{ props.title }}</DialogTitle>
           <DialogClose as-child>
-            <UiButton
-              size="icon"
-              :icon="XIcon"
+            <button
+              type="button"
+              class="close"
               :disabled="!props.dismissible"
               aria-label="Close dialog"
-            />
+            >
+              <XIcon class="close-icon" aria-hidden="true" focusable="false" />
+            </button>
           </DialogClose>
         </header>
         <VisuallyHidden v-else as-child>
-          <div :aria-hidden="false">
-            <DialogTitle>{{ props.title }}</DialogTitle>
-            <DialogDescription v-if="props.description">
-              {{ props.description }}
-            </DialogDescription>
-          </div>
+          <DialogTitle>{{ props.title }}</DialogTitle>
         </VisuallyHidden>
         <slot :close="close" />
         <footer v-if="$slots.actions" class="actions">
@@ -164,25 +152,59 @@ function handleOutside(event: Event) {
 
 .header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
 
-.heading {
-  min-width: 0;
-}
-
 .title {
+  min-width: 0;
   margin: 0;
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
 }
 
-.description {
-  margin: var(--space-2) 0 0;
-  color: var(--app-muted);
+.close {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  color: var(--app-text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.close-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.close::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--space-1));
+  z-index: -1;
+  border-radius: var(--radius-sm);
+}
+
+.close:hover:not(:disabled)::before {
+  background: var(--app-surface-raised);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 1px;
+}
+
+.close:disabled {
+  opacity: 0.45;
 }
 
 .actions {

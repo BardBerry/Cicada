@@ -4,7 +4,7 @@ import {
   CircleXIcon,
   RotateCcwIcon,
   SaveIcon,
-  SquareArrowRightExit,
+  SquareArrowRightEnterIcon,
   SquareIcon,
 } from '@lucide/vue';
 
@@ -95,7 +95,7 @@ const emit = defineEmits<{
 
     <UiButton
       v-if="props.isRecordingPreview"
-      :icon="SquareArrowRightExit"
+      :icon="SquareArrowRightEnterIcon"
       :disabled="!props.canExport"
       @click="emit('exportRecording')"
     >

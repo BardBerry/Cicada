@@ -790,21 +790,35 @@ async function verify() {
         document.querySelectorAll('.recording-export-dialog').length === 1,
       'Single Export invocation did not select Video Frame and open one dialog',
     );
-    const description = document.getElementById(
-      dialog.getAttribute('aria-describedby')!,
-    )!;
     assert(
-      description?.textContent?.includes(
-        workspace.workspaceRecording?.state === 'temporary'
-          ? 'Draft (unsaved)'
-          : 'Saved',
-      ),
-      'Export source description differs',
+      !dialog.hasAttribute('aria-describedby') &&
+        !dialog.textContent?.includes('Exports the Video Frame layout.'),
+      'Removed dialog description or explanation remains',
     );
+    const close = dialog
+      .querySelector<HTMLElement>('[aria-label="Close dialog"]')!
+      .getBoundingClientRect();
+    const title = dialog
+      .querySelector<HTMLElement>('.header .title')!
+      .getBoundingClientRect();
     assert(
-      dialog.querySelector('.note')?.textContent ===
-        'Exports the Video Frame layout.',
-      'Export layout explanation differs',
+      close.width === 16 &&
+        close.height === 16 &&
+        Math.abs(close.y + close.height / 2 - title.y - title.height / 2) < 1,
+      'Close button size or alignment differs',
+    );
+    for (const control of dialog.querySelectorAll<HTMLElement>(
+      '.ui-input, .ui-select, .export-actions .ui-button, .directory-button',
+    )) {
+      assert(
+        Math.abs(control.getBoundingClientRect().height - 36) < 1,
+        'Export control is not compact',
+      );
+    }
+    assert(
+      getComputedStyle(dialog.querySelector('.cancel')!).borderTopWidth ===
+        '0px',
+      'Cancel still has a border',
     );
     return dialog;
   }
@@ -1089,32 +1103,52 @@ async function verify() {
   );
   await getCurrentWindow().setSize(new LogicalSize(720, 520));
   await sleep(350);
-  const toolbarBounds = checkToolbar(EStudioView.VideoFrame);
+  checkToolbar(EStudioView.VideoFrame);
   const status = document.querySelector<HTMLElement>('.studio-status')!;
   const statusBounds = status.getBoundingClientRect();
   const statusLabel = status.querySelector<HTMLElement>('.label')!;
+  const controlsBounds = document
+    .querySelector<HTMLElement>('.studio-controls')!
+    .getBoundingClientRect();
+  const exportStatusBounds = document
+    .querySelector<HTMLElement>('.recording-export-status')!
+    .getBoundingClientRect();
   const brandBounds = document
     .querySelector<HTMLElement>('.brand')!
     .getBoundingClientRect();
+  const navigationBounds = document
+    .querySelector<HTMLElement>('.app-navigation')!
+    .getBoundingClientRect();
+  const studioBounds = document
+    .querySelector<HTMLElement>('.studio')!
+    .getBoundingClientRect();
   assert(
-    Math.abs(
-      statusBounds.top +
-        statusBounds.height / 2 -
-        brandBounds.top -
-        brandBounds.height / 2,
-    ) < 1,
-    'Status is not aligned with the logo',
+    Math.abs(exportStatusBounds.bottom - controlsBounds.bottom) < 1,
+    'Export status bottom inset differs from bottom controls',
   );
   assert(
-    statusBounds.left >= toolbarBounds.right,
-    'Long status overlaps toolbar',
+    Math.abs(
+      studioBounds.right -
+        exportStatusBounds.right -
+        (navigationBounds.left - studioBounds.left),
+    ) < 1,
+    'Export status right inset differs from navigation left inset',
+  );
+  assert(
+    Math.abs(
+      statusBounds.y +
+        statusBounds.height / 2 -
+        brandBounds.y -
+        brandBounds.height / 2,
+    ) < 1,
+    'Studio status is not aligned with the logo',
   );
   assert(
     statusLabel.scrollWidth > statusLabel.clientWidth &&
       statusLabel.title.includes('deliberately long'),
     'Long status is not safely truncated',
   );
-  results.longStatusDoesNotOverlapToolbar = true;
+  results.exportStatusInsetsMatchPanels = true;
   const otherSettings = await openSettings('bottom');
   assert(
     JSON.stringify(exporter.preferences) === retainedPreferences,

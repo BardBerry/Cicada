@@ -218,7 +218,6 @@ onUnmounted(() => {
       v-if="exportDialogOpen && workspaceRecording"
       v-model:open="exportDialogOpen"
       :recording="workspaceRecording.recording"
-      :source-label="recordingLabel ?? 'Recording'"
       :layout="videoFrameLayout"
       @close-focus="
         $event.preventDefault();

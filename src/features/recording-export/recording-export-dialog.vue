@@ -18,7 +18,6 @@ import {
 import { useRecordingExportStore } from './use-recording-export-store';
 
 type TProps = {
-  sourceLabel: string;
   recording: TTypingRecording;
   layout: TCaptionLayout;
 };
@@ -122,7 +121,6 @@ onMounted(async () => {
     class="recording-export-dialog"
     style="width: min(480px, calc(100vw - 2 * var(--space-4)))"
     title="Export Video"
-    :description="`${props.sourceLabel} · H.264 video · No audio`"
     :dismiss-on-outside="false"
   >
     <form
@@ -130,11 +128,11 @@ onMounted(async () => {
       class="form"
       @submit.prevent="exportRecording"
     >
-      <p class="note">Exports the Video Frame layout.</p>
       <div class="settings">
         <label class="field">
           <span>Resolution</span>
           <UiSelect
+            control-size="sm"
             :model-value="store.preferences.resolution"
             :options="resolutionOptions"
             v-bind="{ ariaLabel: 'Resolution' }"
@@ -147,6 +145,7 @@ onMounted(async () => {
           <span>Frame rate</span>
           <UiSelect
             v-model="fps"
+            control-size="sm"
             :options="fpsOptions"
             v-bind="{ ariaLabel: 'Frame rate' }"
           />
@@ -154,6 +153,7 @@ onMounted(async () => {
         <label class="field">
           <span>Quality</span>
           <UiSelect
+            control-size="sm"
             :model-value="store.preferences.quality"
             :options="qualityOptions"
             v-bind="{ ariaLabel: 'Quality' }"
@@ -167,6 +167,7 @@ onMounted(async () => {
           <div class="filename">
             <UiInput
               v-model="filename"
+              control-size="sm"
               class="filename-input"
               aria-label="File name"
               :aria-invalid="Boolean(filenameError)"
@@ -195,6 +196,7 @@ onMounted(async () => {
             <UiInput
               id="export-directory"
               v-model="store.preferences.directory"
+              control-size="sm"
               class="directory-input"
               aria-label="Save to"
               placeholder="Choose a save folder"
@@ -204,6 +206,7 @@ onMounted(async () => {
             <UiButton
               class="directory-button"
               size="icon"
+              control-size="sm"
               :icon="FolderOpenIcon"
               :disabled="browsing"
               aria-label="Choose save folder"
@@ -217,9 +220,12 @@ onMounted(async () => {
     </form>
     <template #actions>
       <div class="export-actions">
-        <UiButton class="cancel" @click="open = false">Cancel</UiButton>
+        <UiButton class="cancel" control-size="sm" @click="open = false"
+          >Cancel</UiButton
+        >
         <UiButton
           variant="primary"
+          control-size="sm"
           type="submit"
           form="recording-export-form"
           :disabled="
@@ -241,13 +247,14 @@ onMounted(async () => {
   align-items: start;
   gap: var(--space-5);
   padding-top: var(--space-5);
-  border-top: 1px solid var(--app-border);
 }
+
 .settings {
   display: grid;
   min-width: 0;
   gap: var(--space-4);
 }
+
 .field {
   display: grid;
   gap: var(--space-2);
@@ -255,14 +262,17 @@ onMounted(async () => {
   color: var(--app-muted);
   font-weight: var(--font-weight-medium);
 }
+
 .filename,
 .destination {
   position: relative;
 }
+
 .filename-input,
 .directory-input {
-  padding-right: calc(var(--control-size-md) + var(--space-2));
+  padding-right: calc(var(--control-size-sm) + var(--space-2));
 }
+
 .extension {
   position: absolute;
   top: 50%;
@@ -270,41 +280,50 @@ onMounted(async () => {
   transform: translateY(-50%);
   pointer-events: none;
 }
+
 .extension,
 .note {
   color: var(--app-muted);
   font-weight: normal;
 }
+
 .directory-input {
   color: var(--app-muted);
   font-size: var(--font-size-sm);
   font-weight: normal;
 }
+
 .directory-button {
   --ui-button-secondary-background: transparent;
 
   position: absolute;
   top: 0;
   right: 0;
+  padding: 0;
+  border: var(--space-1) solid transparent;
+  background-clip: padding-box;
 }
+
+.directory-button:hover:not(:disabled) {
+  background-clip: padding-box;
+}
+
 .note {
   margin: 0;
   font-size: var(--font-size-sm);
 }
+
 .error {
   grid-column: 1 / -1;
   margin: 0;
   color: var(--app-text);
 }
+
 .export-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
   width: 100%;
   padding-top: var(--space-4);
-  border-top: 1px solid var(--app-border);
-}
-.cancel {
-  border: 1px solid var(--app-border);
 }
 </style>

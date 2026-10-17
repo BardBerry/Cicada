@@ -89,20 +89,11 @@ async function openExport() {
     throw new Error('Opening dialog started export');
   if (useStudioUiStore().view !== EStudioView.VideoFrame)
     throw new Error('Single export command did not select Video Frame');
-  const description = document.getElementById(
-    dialog.getAttribute('aria-describedby')!,
-  );
-  const expectedSource =
-    useRecordingWorkspaceStore().workspaceRecording?.state ===
-    EWorkspaceRecordingState.Temporary
-      ? 'Draft (unsaved)'
-      : 'Saved';
   if (
-    !description?.textContent?.includes(expectedSource) ||
-    dialog.querySelector('.note')?.textContent !==
-      'Exports the Video Frame layout.'
+    dialog.hasAttribute('aria-describedby') ||
+    dialog.textContent?.includes('Exports the Video Frame layout.')
   )
-    throw new Error('Export source/layout description differs');
+    throw new Error('Removed export descriptions remain');
   return dialog;
 }
 function submit() {
